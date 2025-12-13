@@ -1,6 +1,14 @@
+<img src="https://github.com/user-attachments/assets/b57cc63a-0ee2-47a8-8d07-c5ba9001ae57" alt="ctl dash icon" width="120" height="88" />
+
 # CTL Dash
 
 A systemd service manager for the COSMIC desktop environment that displays system and user services with their status. Allows you to enable/disable, start/stop/restart services and view basic details and logs.
+
+## Screenshots
+
+| Services List | Service Details |
+|-|-|
+| <img width="1333" height="783" alt="Screenshot_2025-12-14_00-15-05" src="https://github.com/user-attachments/assets/7c70f68b-9cf0-42e8-99fb-16c1ddfd9a9e" /> | <img width="1333" height="783" alt="Screenshot_2025-12-14_00-15-54" src="https://github.com/user-attachments/assets/70ded06c-9c2d-44cb-8ac8-5f586477b566" /> |
 
 ## Features
 
