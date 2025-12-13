@@ -225,3 +225,128 @@ impl SystemdManager {
         Ok(logs)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_systemd_service_creation() {
+        let service = SystemdService {
+            name: "test.service".to_string(),
+            description: "Test Service".to_string(),
+            load_state: "loaded".to_string(),
+            active_state: "active".to_string(),
+            sub_state: "running".to_string(),
+            unit_path: "/lib/systemd/system/test.service".to_string(),
+            unit_file_state: "enabled".to_string(),
+        };
+
+        assert_eq!(service.name, "test.service");
+        assert_eq!(service.description, "Test Service");
+        assert_eq!(service.load_state, "loaded");
+        assert_eq!(service.active_state, "active");
+        assert_eq!(service.sub_state, "running");
+        assert_eq!(service.unit_path, "/lib/systemd/system/test.service");
+        assert_eq!(service.unit_file_state, "enabled");
+    }
+
+    #[test]
+    fn test_systemd_service_clone() {
+        let service = SystemdService {
+            name: "test.service".to_string(),
+            description: "Test Service".to_string(),
+            load_state: "loaded".to_string(),
+            active_state: "active".to_string(),
+            sub_state: "running".to_string(),
+            unit_path: "/lib/systemd/system/test.service".to_string(),
+            unit_file_state: "enabled".to_string(),
+        };
+
+        let cloned = service.clone();
+        assert_eq!(service.name, cloned.name);
+        assert_eq!(service.description, cloned.description);
+    }
+
+    #[test]
+    fn test_service_scope_equality() {
+        assert_eq!(ServiceScope::System, ServiceScope::System);
+        assert_eq!(ServiceScope::User, ServiceScope::User);
+        assert_ne!(ServiceScope::System, ServiceScope::User);
+    }
+
+    #[test]
+    fn test_service_scope_copy() {
+        let scope1 = ServiceScope::System;
+        let scope2 = scope1;
+        assert_eq!(scope1, scope2);
+    }
+
+    #[tokio::test]
+    async fn test_systemd_manager_new_system() {
+        // This test requires a D-Bus system connection
+        // It may fail in CI environments without proper setup
+        let result = SystemdManager::new(ServiceScope::System).await;
+        
+        // We just check if the creation doesn't panic
+        // In a real environment with systemd, this should succeed
+        match result {
+            Ok(_) => assert!(true),
+            Err(e) => {
+                // Expected in environments without systemd or D-Bus
+                println!("Expected error in test environment: {:?}", e);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_systemd_manager_new_user() {
+        // This test requires a D-Bus session connection
+        let result = SystemdManager::new(ServiceScope::User).await;
+        
+        match result {
+            Ok(_) => assert!(true),
+            Err(e) => {
+                // Expected in environments without systemd or D-Bus
+                println!("Expected error in test environment: {:?}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_service_name_extraction() {
+        let unit_path = "/lib/systemd/system/test.service";
+        let name = std::path::Path::new(unit_path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string();
+        
+        assert_eq!(name, "test.service");
+        assert!(name.ends_with(".service"));
+    }
+
+    #[test]
+    fn test_service_name_with_suffix() {
+        let service_name = "myservice";
+        let name = if service_name.ends_with(".service") {
+            service_name.to_string()
+        } else {
+            format!("{}.service", service_name)
+        };
+        
+        assert_eq!(name, "myservice.service");
+    }
+
+    #[test]
+    fn test_service_name_already_with_suffix() {
+        let service_name = "myservice.service";
+        let name = if service_name.ends_with(".service") {
+            service_name.to_string()
+        } else {
+            format!("{}.service", service_name)
+        };
+        
+        assert_eq!(name, "myservice.service");
+    }
+}

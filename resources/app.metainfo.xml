@@ -17,7 +17,7 @@
     </binaries>
   </provides>
   <requires>
-    <display_length compare="ge">360</display_length>
+    <display_length compare="ge">800</display_length>
   </requires>
   <supports>
     <control>keyboard</control>
