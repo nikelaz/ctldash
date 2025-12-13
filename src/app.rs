@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::config::Config;
 use crate::fl;
-use crate::systemd::{ServiceScope, SystemdManager, SystemdService};
+use crate::message::Message;
+use crate::systemd::{ServiceScope, SystemdService};
+use crate::types::{ContextPage, MenuAction, Page};
+use crate::views;
 use cosmic::app::context_drawer;
-use cosmic::cosmic_config::{self, CosmicConfigEntry};
-use cosmic::iced::{Alignment, Length, Subscription};
+use cosmic::iced::{Length, Subscription};
 use cosmic::widget::{self, about::About, icon, menu, nav_bar};
 use cosmic::prelude::*;
 use std::collections::HashMap;
@@ -13,73 +14,25 @@ use std::collections::HashMap;
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 const APP_ICON: &[u8] = include_bytes!("../resources/icons/hicolor/scalable/apps/icon.svg");
 
-/// The application model stores app-specific state used to describe its interface and
-/// drive its logic.
 pub struct AppModel {
-    /// Application state which is managed by the COSMIC runtime.
-    core: cosmic::Core,
-    /// Display a context drawer with the designated page if defined.
-    context_page: ContextPage,
-    /// The about page for this app.
+    pub(crate) core: cosmic::Core,
+    pub(crate) context_page: ContextPage,
     about: About,
-    /// Contains items assigned to the nav bar panel.
-    nav: nav_bar::Model,
-    /// Key bindings for the application's menu bar.
+    pub nav: nav_bar::Model,
     key_binds: HashMap<menu::KeyBind, MenuAction>,
-    /// Configuration data that persists between application runs.
-    config: Config,
-    /// System services
-    system_services: Vec<SystemdService>,
-    /// User services
-    user_services: Vec<SystemdService>,
-    /// Selected service for detail view
-    selected_service: Option<SystemdService>,
-    /// Currently viewing scope
-    current_scope: ServiceScope,
-    /// Current Service Logs
-    service_logs: String,
-    /// Loading state
-    is_loading: bool,
-    /// Search filter for services
-    search_filter: String,
+    pub(crate) system_services: Vec<SystemdService>,
+    pub(crate) user_services: Vec<SystemdService>,
+    pub(crate) selected_service: Option<SystemdService>,
+    pub(crate) current_scope: ServiceScope,
+    pub service_logs: String,
+    pub is_loading: bool,
+    pub search_filter: String,
 }
 
-/// Messages emitted by the application and its widgets.
-#[derive(Debug, Clone)]
-pub enum Message {
-    LaunchUrl(String),
-    ToggleContextPage(ContextPage),
-    UpdateConfig(Config),
-    LoadServices(ServiceScope),
-    ServicesLoaded(ServiceScope, Vec<SystemdService>),
-    SelectService(SystemdService),
-    BackToList,
-    StartService(String),
-    StopService(String),
-    RestartService(String),
-    EnableService(String),
-    DisableService(String),
-    ServiceActionComplete,
-    RefreshServices,
-    LogsLoaded(String),
-    RefreshCurrentService,
-    CurrentServiceRefreshed(Option<SystemdService>, String),
-    Tick,
-    SearchFilterChanged(String),
-}
-
-/// Create a COSMIC application from the app model
 impl cosmic::Application for AppModel {
-    /// The async executor that will be used to run your application's commands.
     type Executor = cosmic::executor::Default;
-
-    /// Data that your application receives to its init method.
     type Flags = ();
-
-    /// Messages which the application and its widgets will emit.
     type Message = Message;
-
-    /// Unique identifier in RDNN (reverse domain name notation) format.
     const APP_ID: &'static str = "com.github.nikelaz.CtlDash";
 
     fn core(&self) -> &cosmic::Core {
@@ -90,22 +43,20 @@ impl cosmic::Application for AppModel {
         &mut self.core
     }
 
-    /// Initializes the application with any given flags and startup commands.
     fn init(
         core: cosmic::Core,
         _flags: Self::Flags,
     ) -> (Self, Task<cosmic::Action<Self::Message>>) {
-        // Create a nav bar with two page items for system and user services.
         let mut nav = nav_bar::Model::default();
 
         nav.insert()
-            .text("System Services")
+            .text(fl!("system-services"))
             .data::<Page>(Page::SystemServices)
             .icon(icon::from_name("applications-system-symbolic"))
             .activate();
 
         nav.insert()
-            .text("User Services")
+            .text(fl!("user-services"))
             .data::<Page>(Page::UserServices)
             .icon(icon::from_name("system-users-symbolic"));
 
@@ -129,13 +80,6 @@ impl cosmic::Application for AppModel {
             about,
             nav,
             key_binds: HashMap::new(),
-            // Optional configuration file for an application.
-            config: cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
-                .map(|context| match Config::get_entry(&context) {
-                    Ok(config) => config,
-                    Err((_errors, config)) => config,
-                })
-                .unwrap_or_default(),
             system_services: Vec::new(),
             user_services: Vec::new(),
             selected_service: None,
@@ -197,12 +141,12 @@ impl cosmic::Application for AppModel {
         let content: Element<_>;
 
         if let Some(service) = &self.selected_service {
-            content = self.view_service_detail(service);
+            content = views::view_service_detail(self, service);
         }
         else {
             content = match self.nav.active_data::<Page>().unwrap() {
-                Page::SystemServices => self.view_services_list(&self.system_services, "System Services"),
-                Page::UserServices => self.view_services_list(&self.user_services, "User Services"),
+                Page::SystemServices => views::view_services_list(self, &self.system_services, fl!("system-services")),
+                Page::UserServices => views::view_services_list(self, &self.user_services, fl!("user-services")),
             };
         }
 
@@ -215,266 +159,19 @@ impl cosmic::Application for AppModel {
 
     /// Register subscriptions for this application.
     fn subscription(&self) -> Subscription<Self::Message> {
-        let config_sub = self.core()
-            .watch_config::<Config>(Self::APP_ID)
-            .map(|update| Message::UpdateConfig(update.config));
-
-        let timer_sub = if self.selected_service.is_some() {
+        if self.selected_service.is_some() {
             cosmic::iced::time::every(std::time::Duration::from_secs(5))
                 .map(|_| Message::Tick)
         } else {
             Subscription::none()
-        };
-
-        Subscription::batch(vec![config_sub, timer_sub])
+        }
     }
 
     /// Handles messages emitted by the application and its widgets.
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
-        match message {
-            Message::LoadServices(scope) => {
-                self.is_loading = true;
-                self.current_scope = scope;
-                return Task::perform(
-                    async move {
-                        let manager = SystemdManager::new(scope).await.ok()?;
-                        let services = manager.list_services().await.ok()?;
-                        Some((scope, services))
-                    },
-                    |result| {
-                        if let Some((scope, services)) = result {
-                            cosmic::Action::from(Message::ServicesLoaded(scope, services))
-                        } else {
-                            cosmic::Action::from(Message::ServicesLoaded(ServiceScope::System, Vec::new()))
-                        }
-                    },
-                );
-            }
-
-            Message::ServicesLoaded(scope, services) => {
-                self.is_loading = false;
-
-                let selected_service_name = self
-                    .selected_service
-                    .as_ref()
-                    .map(|s| s.name.clone());
-
-                match scope {
-                    ServiceScope::System => {
-                        self.system_services = services;
-
-                        if let Some(name) = selected_service_name {
-                            self.selected_service = self.system_services
-                                .iter()
-                                .find(|s| s.name == name)
-                                .cloned();
-                        }
-                    },
-                    ServiceScope::User => {
-                        self.user_services = services;
-
-                        if let Some(name) = selected_service_name {
-                            self.selected_service = self.user_services
-                                .iter()
-                                .find(|s| s.name == name)
-                                .cloned();
-                        }
-                    },
-                }
-            }
-
-            Message::SelectService(service) => {
-                self.selected_service = Some(service.clone());
-                let scope = self.current_scope;
-                return Task::perform(
-                    async move {
-                        let manager = SystemdManager::new(scope).await.ok()?;
-                        let logs = manager.get_service_logs(&service.name, 100).await.unwrap_or_default();
-                        Some(logs)
-                    },
-                    |result| {
-                        if let Some(logs) = result {
-                            cosmic::Action::from(Message::LogsLoaded(logs))
-                        }
-                        else {
-                            cosmic::Action::from(Message::LogsLoaded("Could not load logs".to_string()))
-                        }
-                    },
-                );
-            }
-
-            Message::LogsLoaded(logs) => {
-                self.service_logs = logs;
-            }
-
-            Message::BackToList => {
-                self.selected_service = None;
-            }
-
-            Message::StartService(name) => {
-                let scope = self.current_scope.clone();
-                return Task::perform(
-                    async move {
-                        if let Ok(manager) = SystemdManager::new(scope).await {
-                            let _ = manager.start_service(&name).await;
-                        }
-                    },
-                    |_| cosmic::Action::from(Message::ServiceActionComplete),
-                );
-            }
-
-            Message::StopService(name) => {
-                let scope = self.current_scope.clone();
-                return Task::perform(
-                    async move {
-                        if let Ok(manager) = SystemdManager::new(scope).await {
-                            let _ = manager.stop_service(&name).await;
-                        }
-                    },
-                    |_| cosmic::Action::from(Message::ServiceActionComplete),
-                );
-            }
-
-            Message::RestartService(name) => {
-                let scope = self.current_scope.clone();
-                return Task::perform(
-                    async move {
-                        if let Ok(manager) = SystemdManager::new(scope).await {
-                            let _ = manager.restart_service(&name).await;
-                        }
-                    },
-                    |_| cosmic::Action::from(Message::ServiceActionComplete),
-                );
-            }
-
-            Message::EnableService(name) => {
-                eprintln!("EnableService called for: {}", name);
-                let scope = self.current_scope.clone();
-                return Task::perform(
-                    async move {
-                        eprintln!("Attempting to enable service: {} with scope: {:?}", name, scope);
-                        if let Ok(manager) = SystemdManager::new(scope).await {
-                            match manager.enable_service(&name).await {
-                                Ok(_) => eprintln!("Successfully enabled: {}", name),
-                                Err(e) => eprintln!("Failed to enable {}: {:?}", name, e),
-                            }
-                        } else {
-                            eprintln!("Failed to create SystemdManager");
-                        }
-                    },
-                    |_| cosmic::Action::from(Message::ServiceActionComplete),
-                );
-            }
-
-            Message::DisableService(name) => {
-                eprintln!("DisableService called for: {}", name);
-                let scope = self.current_scope.clone();
-                return Task::perform(
-                    async move {
-                        eprintln!("Attempting to disable service: {} with scope: {:?}", name, scope);
-                        if let Ok(manager) = SystemdManager::new(scope).await {
-                            match manager.disable_service(&name).await {
-                                Ok(_) => eprintln!("Successfully disabled: {}", name),
-                                Err(e) => eprintln!("Failed to disable {}: {:?}", name, e),
-                            }
-                        } else {
-                            eprintln!("Failed to create SystemdManager");
-                        }
-                    },
-                    |_| cosmic::Action::from(Message::ServiceActionComplete),
-                );
-            }
-
-            Message::ServiceActionComplete | Message::RefreshServices => {
-                let scope = self.current_scope;
-                return Task::perform(async {}, move |_| {
-                    cosmic::Action::from(Message::LoadServices(scope))
-                });
-            }
-
-            Message::Tick => {
-                if self.selected_service.is_some() {
-                    return Task::perform(async {}, |_| {
-                        cosmic::Action::from(Message::RefreshCurrentService)
-                    });
-                }
-            }
-
-            Message::RefreshCurrentService => {
-                if let Some(service) = &self.selected_service {
-                    let service_name = service.name.clone();
-                    let scope = self.current_scope;
-                    return Task::perform(
-                        async move {
-                            let manager = SystemdManager::new(scope).await.ok()?;
-                            let services = manager.list_services().await.ok()?;
-                            let updated_service = services.into_iter().find(|s| s.name == service_name);
-                            let logs = if let Some(_) = &updated_service {
-                                manager.get_service_logs(&service_name, 100).await.unwrap_or_default()
-                            } else {
-                                String::new()
-                            };
-                            Some((updated_service, logs))
-                        },
-                        |result| {
-                            if let Some((service, logs)) = result {
-                                cosmic::Action::from(Message::CurrentServiceRefreshed(service, logs))
-                            } else {
-                                cosmic::Action::from(Message::CurrentServiceRefreshed(None, String::new()))
-                            }
-                        },
-                    );
-                }
-            }
-
-            Message::CurrentServiceRefreshed(service, logs) => {
-                if let Some(updated_service) = service {
-                    self.selected_service = Some(updated_service.clone());
-                    self.service_logs = logs;
-
-                    match self.current_scope {
-                        ServiceScope::System => {
-                            if let Some(index) = self.system_services.iter().position(|s| s.name == updated_service.name) {
-                                self.system_services[index] = updated_service;
-                            }
-                        },
-                        ServiceScope::User => {
-                            if let Some(index) = self.user_services.iter().position(|s| s.name == updated_service.name) {
-                                self.user_services[index] = updated_service;
-                            }
-                        },
-                    }
-                }
-            }
-
-            Message::ToggleContextPage(context_page) => {
-                if self.context_page == context_page {
-                    self.core.window.show_context = !self.core.window.show_context;
-                } else {
-                    self.context_page = context_page;
-                    self.core.window.show_context = true;
-                }
-            }
-
-            Message::UpdateConfig(config) => {
-                self.config = config;
-            }
-
-            Message::SearchFilterChanged(filter) => {
-                self.search_filter = filter;
-            }
-
-            Message::LaunchUrl(url) => match open::that_detached(&url) {
-                Ok(()) => {}
-                Err(err) => {
-                    eprintln!("failed to open {url:?}: {err}");
-                }
-            },
-        }
-        Task::none()
+        self.update_message(message)
     }
 
-    /// Called when a nav item is selected.
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<cosmic::Action<Self::Message>> {
         self.nav.activate(id);
         self.selected_service = None;
@@ -494,255 +191,3 @@ impl cosmic::Application for AppModel {
     }
 }
 
-impl AppModel {
-    /// Updates the header and window titles.
-    pub fn update_title(&mut self) -> Task<cosmic::Action<Message>> {
-        let mut window_title = fl!("app-title");
-
-        if let Some(page) = self.nav.text(self.nav.active()) {
-            window_title.push_str(" — ");
-            window_title.push_str(page);
-        }
-
-        if let Some(id) = self.core.main_window_id() {
-            self.set_window_title(window_title, id)
-        } else {
-            Task::none()
-        }
-    }
-
-    fn view_services_list<'a>(&'a self, services: &'a [SystemdService], title: &'a str) -> Element<'a, Message> {
-        let spacing = cosmic::theme::spacing();
-
-        let header = widget::row()
-            .push(widget::text::title3(title))
-            .push(
-                widget::button::standard("Refresh")
-                    .on_press(Message::RefreshServices)
-            )
-            .spacing(spacing.space_m)
-            .align_y(Alignment::Center);
-
-        let search_input = widget::text_input("Search services...", &self.search_filter)
-            .on_input(Message::SearchFilterChanged)
-            .width(Length::Fill);
-
-        let filtered_services: Vec<&SystemdService> = if self.search_filter.is_empty() {
-            services.iter().collect()
-        } else {
-            let filter_lower = self.search_filter.to_lowercase();
-            services
-                .iter()
-                .filter(|s| {
-                    s.name.to_lowercase().contains(&filter_lower)
-                        || s.description.to_lowercase().contains(&filter_lower)
-                })
-                .collect()
-        };
-
-        let list_header = widget::row()
-            .push(widget::text("Service").width(Length::FillPortion(3)))
-            .push(widget::text("Description").width(Length::FillPortion(3)))
-            .push(widget::text("Active State").width(Length::FillPortion(1)))
-            .push(widget::text("Sub State").width(Length::FillPortion(1)))
-            .padding(cosmic::iced::Padding::from([0, spacing.space_m]));
-
-        let mut list = widget::list_column().spacing(spacing.space_xs);
-
-        if self.is_loading {
-            list = list.add(widget::text("Loading services..."));
-        } else if filtered_services.is_empty() {
-            if self.search_filter.is_empty() {
-                list = list.add(widget::text("No services found"));
-            } else {
-                list = list.add(widget::text("No services match your search"));
-            }
-        } else {
-            for service in filtered_services {
-                let row_content = widget::row()
-                    .push(
-                        widget::text(&service.name)
-                            .width(Length::FillPortion(3))
-                            .wrapping(cosmic::iced::widget::text::Wrapping::WordOrGlyph)
-                    )
-                    .push(
-                        widget::text(&service.description)
-                            .width(Length::FillPortion(3))
-                            .wrapping(cosmic::iced::widget::text::Wrapping::Word)
-                    )
-                    .push(
-                        widget::text(&service.active_state)
-                            .width(Length::FillPortion(1))
-                    )
-                    .push(
-                        widget::text(&service.sub_state)
-                            .width(Length::FillPortion(1))
-                    );
-
-                let service_clone = service.clone();
-
-                list = list.add(
-                    widget::mouse_area(row_content).on_press(Message::SelectService(service_clone))
-                )
-            }
-        }
-
-        let scrollable = widget::scrollable(list)
-            .height(Length::Fill);
-
-        let services_table = widget::column()
-            .push(list_header)
-            .push(scrollable)
-            .spacing(spacing.space_xs);
-
-        widget::column()
-            .push(header)
-            .push(search_input)
-            .push(services_table)
-            .spacing(spacing.space_m)
-            .into()
-    }
-
-    fn view_service_detail<'a>(&'a self, service: &'a SystemdService) -> Element<'a, Message> {
-        let spacing = cosmic::theme::spacing();
-
-        let previous_button_label = match self.nav.active_data::<Page>().unwrap() {
-            Page::SystemServices => "All System Services",
-            Page::UserServices => "All User Services",
-        };
-
-        let previous_button = widget::button::icon(icon::from_name("go-previous-symbolic"))
-            .extra_small()
-            .padding(0)
-            .label(previous_button_label)
-            .spacing(4)
-            .class(widget::button::ButtonClass::Link)
-            .on_press(Message::BackToList);
-
-        let sub_page_header = widget::row::with_capacity(2).push(widget::text::title3(&service.name));
-
-        let header = widget::column::with_capacity(2)
-            .push(previous_button)
-            .push(sub_page_header)
-            .spacing(6)
-            .width(Length::Shrink);
-
-        let description = widget::row()
-            .push(widget::text("Description:").width(Length::Fixed(120.0)))
-            .push(widget::text(&service.description))
-            .spacing(spacing.space_s);
-
-        let load_state = widget::row()
-            .push(widget::text("Load State:").width(Length::Fixed(120.0)))
-            .push(widget::text(&service.load_state))
-            .spacing(spacing.space_s);
-
-        let is_enabled = service.unit_file_state == "enabled";
-        let can_toggle = service.unit_file_state == "enabled" || service.unit_file_state == "disabled";
-        let service_name_for_toggle = service.name.clone();
-        
-        let enabled_toggler = if can_toggle {
-            widget::toggler(is_enabled)
-                .on_toggle(move |enabled| {
-                    if enabled {
-                        Message::EnableService(service_name_for_toggle.clone())
-                    } else {
-                        Message::DisableService(service_name_for_toggle.clone())
-                    }
-                })
-        } else {
-            widget::toggler(is_enabled)
-        };
-        
-        let enabled = widget::row()
-            .push(widget::text("Enabled:").width(Length::Fixed(120.0)))
-            .push(enabled_toggler)
-            .push(widget::text(format!("({})", service.unit_file_state)).size(12))
-            .align_y(Alignment::Center)
-            .spacing(spacing.space_s);
-
-        let status = widget::row()
-            .push(widget::text("Status:").width(Length::Fixed(120.0)))
-            .push(widget::text(&service.sub_state))
-            .spacing(spacing.space_s);
-
-        let unit_path = widget::row()
-            .push(widget::text("Unit Path:").width(Length::Fixed(120.0)))
-            .push(widget::text(&service.unit_path))
-            .spacing(spacing.space_s);
-
-        let info_section = widget::column()
-            .push(description)
-            .push(enabled)
-            .push(status)
-            .push(load_state)
-            .push(unit_path)
-            .spacing(spacing.space_s);
-
-        let service_name = service.name.clone();
-        let service_name2 = service.name.clone();
-        let service_name3 = service.name.clone();
-
-
-        let controls;
-
-        if service.sub_state == "running" {
-            controls = widget::row()
-                .push(widget::button::standard("Stop").on_press(Message::StopService(service_name2)))
-                .push(widget::button::standard("Restart").on_press(Message::RestartService(service_name3)))
-                .spacing(spacing.space_s);
-        }
-        else {
-            controls = widget::row()
-                .push(widget::button::standard("Start").on_press(Message::StartService(service_name)))
-                .push(widget::button::standard("Restart").on_press(Message::RestartService(service_name3)))
-                .spacing(spacing.space_s);
-        }
-
-        let logs = widget::container(
-            widget::text(&self.service_logs)
-                .size(12)
-        );
-
-        let scrollable_logs = widget::scrollable(logs)
-            .width(Length::Fill)
-            .height(Length::Fill);
-
-        widget::column()
-            .push(header)
-            .push(info_section)
-            .push(controls)
-            .push(widget::text::title4("Logs"))
-            .push(scrollable_logs)
-            .spacing(spacing.space_m)
-            .into()
-    }
-}
-
-/// The page to display in the application.
-pub enum Page {
-    SystemServices,
-    UserServices,
-}
-
-/// The context page to display in the context drawer.
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub enum ContextPage {
-    #[default]
-    About,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MenuAction {
-    About,
-}
-
-impl menu::action::MenuAction for MenuAction {
-    type Message = Message;
-
-    fn message(&self) -> Self::Message {
-        match self {
-            MenuAction::About => Message::ToggleContextPage(ContextPage::About),
-        }
-    }
-}
