@@ -1,6 +1,23 @@
 # Ctl Dash
 
-Displays services and logs and allows you to enable/disable/start/stop/restart every service.
+A systemd service manager for COSMIC Desktop that displays system and user services with their status. Allows you to start, stop, restart services and view basic details.
+
+## Features
+
+- **Two Views**: Separate views for system services and user services
+- **Service List**: Display all systemd services with their current status
+- **Status Indicators**: Visual indicators showing active, failed, or inactive states
+- **Service Details**: View detailed information about individual services
+- **Service Control**: Start, stop, and restart services directly from the UI
+- **Quick Refresh**: Manually refresh the service list to see current status
+
+## Usage
+
+The application has two main navigation items:
+- **System Services**: Shows systemd services running at the system level
+- **User Services**: Shows systemd services running under your user account
+
+Click on any service in the list to view its details and control its state. Use the "Refresh" button to update the service list.
 
 ## Installation
 

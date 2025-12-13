@@ -2,15 +2,14 @@
 
 use crate::config::Config;
 use crate::fl;
+use crate::systemd::{ServiceScope, SystemdManager, SystemdService};
 use cosmic::app::context_drawer;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
-use cosmic::iced::alignment::{Horizontal, Vertical};
+use cosmic::iced::alignment::Horizontal;
 use cosmic::iced::{Alignment, Length, Subscription};
 use cosmic::widget::{self, about::About, icon, menu, nav_bar};
-use cosmic::{iced_futures, prelude::*};
-use futures_util::SinkExt;
+use cosmic::prelude::*;
 use std::collections::HashMap;
-use std::time::Duration;
 
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 const APP_ICON: &[u8] = include_bytes!("../resources/icons/hicolor/scalable/apps/icon.svg");
@@ -30,10 +29,18 @@ pub struct AppModel {
     key_binds: HashMap<menu::KeyBind, MenuAction>,
     /// Configuration data that persists between application runs.
     config: Config,
-    /// Time active
-    time: u32,
-    /// Toggle the watch subscription
-    watch_is_active: bool,
+    /// System services
+    system_services: Vec<SystemdService>,
+    /// User services
+    user_services: Vec<SystemdService>,
+    /// Selected service for detail view
+    selected_service: Option<SystemdService>,
+    /// Currently viewing scope
+    current_scope: ServiceScope,
+    /// Current Service Logs
+    service_logs: String,
+    /// Loading state
+    is_loading: bool,
 }
 
 /// Messages emitted by the application and its widgets.
@@ -41,9 +48,17 @@ pub struct AppModel {
 pub enum Message {
     LaunchUrl(String),
     ToggleContextPage(ContextPage),
-    ToggleWatch,
     UpdateConfig(Config),
-    WatchTick(u32),
+    LoadServices(ServiceScope),
+    ServicesLoaded(ServiceScope, Vec<SystemdService>),
+    SelectService(SystemdService),
+    BackToList,
+    StartService(String),
+    StopService(String),
+    RestartService(String),
+    ServiceActionComplete,
+    RefreshServices,
+    LogsLoaded(String),
 }
 
 /// Create a COSMIC application from the app model
@@ -58,7 +73,7 @@ impl cosmic::Application for AppModel {
     type Message = Message;
 
     /// Unique identifier in RDNN (reverse domain name notation) format.
-    const APP_ID: &'static str = "dev.mmurphy.Test";
+    const APP_ID: &'static str = "com.github.nikelaz.CtlDash";
 
     fn core(&self) -> &cosmic::Core {
         &self.core
@@ -73,24 +88,19 @@ impl cosmic::Application for AppModel {
         core: cosmic::Core,
         _flags: Self::Flags,
     ) -> (Self, Task<cosmic::Action<Self::Message>>) {
-        // Create a nav bar with three page items.
+        // Create a nav bar with two page items for system and user services.
         let mut nav = nav_bar::Model::default();
 
         nav.insert()
-            .text(fl!("page-id", num = 1))
-            .data::<Page>(Page::Page1)
-            .icon(icon::from_name("applications-science-symbolic"))
+            .text("System Services")
+            .data::<Page>(Page::SystemServices)
+            .icon(icon::from_name("applications-system-symbolic"))
             .activate();
 
         nav.insert()
-            .text(fl!("page-id", num = 2))
-            .data::<Page>(Page::Page2)
-            .icon(icon::from_name("applications-system-symbolic"));
-
-        nav.insert()
-            .text(fl!("page-id", num = 3))
-            .data::<Page>(Page::Page3)
-            .icon(icon::from_name("applications-games-symbolic"));
+            .text("User Services")
+            .data::<Page>(Page::UserServices)
+            .icon(icon::from_name("system-users-symbolic"));
 
         // Create the about widget
         let about = About::default()
@@ -111,23 +121,24 @@ impl cosmic::Application for AppModel {
             config: cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
                 .map(|context| match Config::get_entry(&context) {
                     Ok(config) => config,
-                    Err((_errors, config)) => {
-                        // for why in errors {
-                        //     tracing::error!(%why, "error loading app config");
-                        // }
-
-                        config
-                    }
+                    Err((_errors, config)) => config,
                 })
                 .unwrap_or_default(),
-            time: 0,
-            watch_is_active: false,
+            system_services: Vec::new(),
+            user_services: Vec::new(),
+            selected_service: None,
+            current_scope: ServiceScope::System,
+            service_logs: "".to_string(),
+            is_loading: false,
         };
 
-        // Create a startup command that sets the window title.
-        let command = app.update_title();
+        // Create a startup command that sets the window title and loads services.
+        let title_command = app.update_title();
+        let load_command = Task::perform(async {}, |_| {
+            cosmic::Action::from(Message::LoadServices(ServiceScope::System))
+        });
 
-        (app, command)
+        (app, Task::batch(vec![title_command, load_command]))
     }
 
     /// Elements to pack at the start of the header bar.
@@ -168,134 +179,163 @@ impl cosmic::Application for AppModel {
     /// Application events will be processed through the view. Any messages emitted by
     /// events received by widgets will be passed to the update method.
     fn view(&self) -> Element<'_, Self::Message> {
-        let space_s = cosmic::theme::spacing().space_s;
-        let content: Element<_> = match self.nav.active_data::<Page>().unwrap() {
-            Page::Page1 => {
-                let header = widget::row::with_capacity(2)
-                    .push(widget::text::title1(fl!("welcome")))
-                    .push(widget::text::title3(fl!("page-id", num = 1)))
-                    .align_y(Alignment::End)
-                    .spacing(space_s);
+        let spacing = cosmic::theme::spacing();
 
-                let counter_label = ["Watch: ", self.time.to_string().as_str()].concat();
-                let section = cosmic::widget::settings::section().add(
-                    cosmic::widget::settings::item::builder(counter_label).control(
-                        widget::button::text(if self.watch_is_active {
-                            "Stop"
-                        } else {
-                            "Start"
-                        })
-                        .on_press(Message::ToggleWatch),
-                    ),
-                );
+        let content: Element<_>;
 
-                widget::column::with_capacity(2)
-                    .push(header)
-                    .push(section)
-                    .spacing(space_s)
-                    .height(Length::Fill)
-                    .into()
-            }
-
-            Page::Page2 => {
-                let header = widget::row::with_capacity(2)
-                    .push(widget::text::title1(fl!("welcome")))
-                    .push(widget::text::title3(fl!("page-id", num = 2)))
-                    .align_y(Alignment::End)
-                    .spacing(space_s);
-
-                widget::column::with_capacity(1)
-                    .push(header)
-                    .spacing(space_s)
-                    .height(Length::Fill)
-                    .into()
-            }
-
-            Page::Page3 => {
-                let header = widget::row::with_capacity(2)
-                    .push(widget::text::title1(fl!("welcome")))
-                    .push(widget::text::title3(fl!("page-id", num = 3)))
-                    .align_y(Alignment::End)
-                    .spacing(space_s);
-
-                widget::column::with_capacity(1)
-                    .push(header)
-                    .spacing(space_s)
-                    .height(Length::Fill)
-                    .into()
-            }
-        };
+        if let Some(service) = &self.selected_service {
+            content = self.view_service_detail(service);
+        }
+        else {
+            content = match self.nav.active_data::<Page>().unwrap() {
+                Page::SystemServices => self.view_services_list(&self.system_services, "System Services"),
+                Page::UserServices => self.view_services_list(&self.user_services, "User Services"),
+            };
+        }
 
         widget::container(content)
-            .width(600)
-            .height(Length::Fill)
-            .apply(widget::container)
             .width(Length::Fill)
-            .align_x(Horizontal::Center)
-            .align_y(Vertical::Center)
+            .height(Length::Fill)
+            .padding(cosmic::iced::Padding::from([0, spacing.space_m, spacing.space_m, spacing.space_m]))
             .into()
     }
 
     /// Register subscriptions for this application.
-    ///
-    /// Subscriptions are long-running async tasks running in the background which
-    /// emit messages to the application through a channel. They can be dynamically
-    /// stopped and started conditionally based on application state, or persist
-    /// indefinitely.
     fn subscription(&self) -> Subscription<Self::Message> {
-        // Add subscriptions which are always active.
-        let mut subscriptions = vec![
-            // Watch for application configuration changes.
-            self.core()
-                .watch_config::<Config>(Self::APP_ID)
-                .map(|update| {
-                    // for why in update.errors {
-                    //     tracing::error!(?why, "app config error");
-                    // }
-
-                    Message::UpdateConfig(update.config)
-                }),
-        ];
-
-        // Conditionally enables a timer that emits a message every second.
-        if self.watch_is_active {
-            subscriptions.push(Subscription::run(|| {
-                iced_futures::stream::channel(1, |mut emitter| async move {
-                    let mut time = 1;
-                    let mut interval = tokio::time::interval(Duration::from_secs(1));
-
-                    loop {
-                        interval.tick().await;
-                        _ = emitter.send(Message::WatchTick(time)).await;
-                        time += 1;
-                    }
-                })
-            }));
-        }
-
-        Subscription::batch(subscriptions)
+        self.core()
+            .watch_config::<Config>(Self::APP_ID)
+            .map(|update| Message::UpdateConfig(update.config))
     }
 
     /// Handles messages emitted by the application and its widgets.
-    ///
-    /// Tasks may be returned for asynchronous execution of code in the background
-    /// on the application's async runtime.
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
-            Message::WatchTick(time) => {
-                self.time = time;
+            Message::LoadServices(scope) => {
+                self.is_loading = true;
+                self.current_scope = scope;
+                return Task::perform(
+                    async move {
+                        let manager = SystemdManager::new(scope).await.ok()?;
+                        let services = manager.list_services().await.ok()?;
+                        Some((scope, services))
+                    },
+                    |result| {
+                        if let Some((scope, services)) = result {
+                            cosmic::Action::from(Message::ServicesLoaded(scope, services))
+                        } else {
+                            cosmic::Action::from(Message::ServicesLoaded(ServiceScope::System, Vec::new()))
+                        }
+                    },
+                );
             }
 
-            Message::ToggleWatch => {
-                self.watch_is_active = !self.watch_is_active;
+            Message::ServicesLoaded(scope, services) => {
+                self.is_loading = false;
+
+                let selected_service_name = self
+                    .selected_service
+                    .as_ref()
+                    .map(|s| s.name.clone());
+
+                match scope {
+                    ServiceScope::System => {
+                        self.system_services = services;
+
+                        if let Some(name) = selected_service_name {
+                            self.selected_service = self.system_services
+                                .iter()
+                                .find(|s| s.name == name)
+                                .cloned();
+                        }
+                    },
+                    ServiceScope::User => {
+                        self.user_services = services;
+
+                        if let Some(name) = selected_service_name {
+                            self.selected_service = self.user_services
+                                .iter()
+                                .find(|s| s.name == name)
+                                .cloned();
+                        }
+                    },
+                }
+            }
+
+            Message::SelectService(service) => {
+                self.selected_service = Some(service.clone());
+                let scope = self.current_scope;
+                return Task::perform(
+                    async move {
+                        let manager = SystemdManager::new(scope).await.ok()?;
+                        let logs = manager.get_service_logs(&service.name, 100).await.unwrap_or_default();
+                        Some(logs)
+                    },
+                    |result| {
+                        if let Some(logs) = result {
+                            cosmic::Action::from(Message::LogsLoaded(logs))
+                        }
+                        else {
+                            cosmic::Action::from(Message::LogsLoaded("Could not load logs".to_string()))
+                        }
+                    },
+                );
+            }
+
+            Message::LogsLoaded(logs) => {
+                self.service_logs = logs;
+            }
+
+            Message::BackToList => {
+                self.selected_service = None;
+            }
+
+            Message::StartService(name) => {
+                let scope = self.current_scope.clone();
+                return Task::perform(
+                    async move {
+                        if let Ok(manager) = SystemdManager::new(scope).await {
+                            let _ = manager.start_service(&name).await;
+                        }
+                    },
+                    |_| cosmic::Action::from(Message::ServiceActionComplete),
+                );
+            }
+
+            Message::StopService(name) => {
+                let scope = self.current_scope.clone();
+                return Task::perform(
+                    async move {
+                        if let Ok(manager) = SystemdManager::new(scope).await {
+                            let _ = manager.stop_service(&name).await;
+                        }
+                    },
+                    |_| cosmic::Action::from(Message::ServiceActionComplete),
+                );
+            }
+
+            Message::RestartService(name) => {
+                let scope = self.current_scope.clone();
+                return Task::perform(
+                    async move {
+                        if let Ok(manager) = SystemdManager::new(scope).await {
+                            let _ = manager.restart_service(&name).await;
+                        }
+                    },
+                    |_| cosmic::Action::from(Message::ServiceActionComplete),
+                );
+            }
+
+            Message::ServiceActionComplete | Message::RefreshServices => {
+                let scope = self.current_scope;
+                return Task::perform(async {}, move |_| {
+                    cosmic::Action::from(Message::LoadServices(scope))
+                });
             }
 
             Message::ToggleContextPage(context_page) => {
                 if self.context_page == context_page {
-                    // Close the context drawer if the toggled context page is the same.
                     self.core.window.show_context = !self.core.window.show_context;
                 } else {
-                    // Open the context drawer to display the requested context page.
                     self.context_page = context_page;
                     self.core.window.show_context = true;
                 }
@@ -317,10 +357,20 @@ impl cosmic::Application for AppModel {
 
     /// Called when a nav item is selected.
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<cosmic::Action<Self::Message>> {
-        // Activate the page in the model.
         self.nav.activate(id);
+        self.selected_service = None;
 
-        self.update_title()
+        let scope = match self.nav.active_data::<Page>().unwrap() {
+            Page::SystemServices => ServiceScope::System,
+            Page::UserServices => ServiceScope::User,
+        };
+
+        let title_command = self.update_title();
+        let load_command = Task::perform(async {}, move |_| {
+            cosmic::Action::from(Message::LoadServices(scope))
+        });
+
+        Task::batch(vec![title_command, load_command])
     }
 }
 
@@ -340,13 +390,177 @@ impl AppModel {
             Task::none()
         }
     }
+
+    fn view_services_list<'a>(&'a self, services: &'a [SystemdService], title: &'a str) -> Element<'a, Message> {
+        let spacing = cosmic::theme::spacing();
+
+        let header = widget::row()
+            .push(widget::text::title3(title))
+            .push(
+                widget::button::standard("Refresh")
+                    .on_press(Message::RefreshServices)
+            )
+            .spacing(spacing.space_m)
+            .align_y(Alignment::Center);
+
+        let list_header = widget::row()
+            .push(widget::text("Service").width(Length::FillPortion(3)))
+            .push(widget::text("Description").width(Length::FillPortion(3)))
+            .push(widget::text("Active State").width(Length::FillPortion(1)))
+            .push(widget::text("Sub State").width(Length::FillPortion(1)))
+            .padding(cosmic::iced::Padding::from([0, spacing.space_m]));
+
+        let mut list = widget::list_column().spacing(spacing.space_xs);
+
+        if self.is_loading {
+            list = list.add(widget::text("Loading services..."));
+        } else if services.is_empty() {
+            list = list.add(widget::text("No services found"));
+        } else {
+            for service in services {
+                let row_content = widget::row()
+                    .push(
+                        widget::text(&service.name)
+                            .width(Length::FillPortion(3))
+                    )
+                    .push(
+                        widget::text(&service.description)
+                            .width(Length::FillPortion(3))
+                    )
+                    .push(
+                        widget::text(&service.active_state)
+                            .width(Length::FillPortion(1))
+                    )
+                    .push(
+                        widget::text(&service.sub_state)
+                            .width(Length::FillPortion(1))
+                    );
+
+                let service_clone = service.clone();
+
+                list = list.add(
+                    widget::mouse_area(row_content).on_press(Message::SelectService(service_clone))
+                )
+            }
+        }
+
+        let scrollable = widget::scrollable(list)
+            .height(Length::Fill);
+
+        let services_table = widget::column()
+            .push(list_header)
+            .push(scrollable)
+            .spacing(spacing.space_xs);
+
+        widget::column()
+            .push(header)
+            .push(services_table)
+            .spacing(spacing.space_m)
+            .into()
+    }
+
+    fn view_service_detail<'a>(&'a self, service: &'a SystemdService) -> Element<'a, Message> {
+        let spacing = cosmic::theme::spacing();
+
+        let previous_button_label = match self.nav.active_data::<Page>().unwrap() {
+            Page::SystemServices => "All System Services",
+            Page::UserServices => "All User Services",
+        };
+
+        let previous_button = widget::button::icon(icon::from_name("go-previous-symbolic"))
+            .extra_small()
+            .padding(0)
+            .label(previous_button_label)
+            .spacing(4)
+            .class(widget::button::ButtonClass::Link)
+            .on_press(Message::BackToList);
+
+        let sub_page_header = widget::row::with_capacity(2).push(widget::text::title3(&service.name));
+
+        let header = widget::column::with_capacity(2)
+            .push(previous_button)
+            .push(sub_page_header)
+            .spacing(6)
+            .width(Length::Shrink);
+
+        let description = widget::row()
+            .push(widget::text("Description:").width(Length::Fixed(120.0)))
+            .push(widget::text(&service.description))
+            .spacing(spacing.space_s);
+
+        let load_state = widget::row()
+            .push(widget::text("Load State:").width(Length::Fixed(120.0)))
+            .push(widget::text(&service.load_state))
+            .spacing(spacing.space_s);
+
+        let enabled = widget::row()
+            .push(widget::text("Enabled:").width(Length::Fixed(120.0)))
+            .push(widget::toggler(service.active_state == "active"))
+            .align_y(Alignment::Center)
+            .spacing(spacing.space_s);
+
+        let status = widget::row()
+            .push(widget::text("Status:").width(Length::Fixed(120.0)))
+            .push(widget::text(&service.sub_state))
+            .spacing(spacing.space_s);
+
+        let unit_path = widget::row()
+            .push(widget::text("Unit Path:").width(Length::Fixed(120.0)))
+            .push(widget::text(&service.unit_path))
+            .spacing(spacing.space_s);
+
+        let info_section = widget::column()
+            .push(description)
+            .push(enabled)
+            .push(status)
+            .push(load_state)
+            .push(unit_path)
+            .spacing(spacing.space_s);
+
+        let service_name = service.name.clone();
+        let service_name2 = service.name.clone();
+        let service_name3 = service.name.clone();
+
+
+        let mut controls;
+
+        if service.sub_state == "running" {
+            controls = widget::row()
+                .push(widget::button::standard("Stop").on_press(Message::StopService(service_name2)))
+                .push(widget::button::standard("Restart").on_press(Message::RestartService(service_name3)))
+                .spacing(spacing.space_s);
+        }
+        else {
+            controls = widget::row()
+                .push(widget::button::standard("Start").on_press(Message::StartService(service_name)))
+                .push(widget::button::standard("Restart").on_press(Message::RestartService(service_name3)))
+                .spacing(spacing.space_s);
+        }
+
+        let logs = widget::container(
+            widget::text(&self.service_logs)
+                .size(12)
+        );
+
+        let scrollable_logs = widget::scrollable(logs)
+            .width(Length::Fill)
+            .height(Length::Fill);
+
+        widget::column()
+            .push(header)
+            .push(info_section)
+            .push(controls)
+            .push(widget::text::title4("Logs"))
+            .push(scrollable_logs)
+            .spacing(spacing.space_m)
+            .into()
+    }
 }
 
 /// The page to display in the application.
 pub enum Page {
-    Page1,
-    Page2,
-    Page3,
+    SystemServices,
+    UserServices,
 }
 
 /// The context page to display in the context drawer.
