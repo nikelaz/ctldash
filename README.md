@@ -1,4 +1,4 @@
-# CTLDash
+# CTL Dash
 
 A systemd service manager for the COSMIC desktop environment that displays system and user services with their status. Allows you to enable/disable, start/stop/restart services and view basic details and logs.
 

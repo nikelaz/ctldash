@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 
-use std::collections::HashMap;
 use zbus::{Connection, Result};
 
 #[derive(Debug, Clone)]
@@ -58,11 +57,7 @@ impl SystemdManager {
             if !name.ends_with(".service") {
                 continue;
             }
-            
-            // Try to get unit properties for loaded services
-            let unit_obj_path = format!("/org/freedesktop/systemd1/unit/{}", 
-                name.replace("-", "_2d").replace(".", "_2e"));
-            
+
             let (description, load_state, active_state, sub_state) = 
                 self.get_unit_properties(&name).await
                     .unwrap_or_else(|_| (
@@ -129,24 +124,6 @@ impl SystemdManager {
             .unwrap_or_else(|_| "dead".to_string());
 
         Ok((description, load_state, active_state, sub_state))
-    }
-
-    pub async fn get_service_properties(
-        &self,
-        unit_path: &str,
-    ) -> Result<HashMap<String, zbus::zvariant::OwnedValue>> {
-        let proxy = zbus::Proxy::new(
-            &self.connection,
-            "org.freedesktop.systemd1",
-            unit_path,
-            "org.freedesktop.DBus.Properties",
-        )
-        .await?;
-
-        let properties: HashMap<String, zbus::zvariant::OwnedValue> =
-            proxy.call("GetAll", &("org.freedesktop.systemd1.Unit",)).await?;
-
-        Ok(properties)
     }
 
     pub async fn start_service(&self, service_name: &str) -> Result<()> {
@@ -225,19 +202,6 @@ impl SystemdManager {
         }
 
         Ok(())
-    }
-
-    pub async fn get_unit_file_state(&self, service_name: &str) -> Result<String> {
-        let proxy = zbus::Proxy::new(
-            &self.connection,
-            "org.freedesktop.systemd1",
-            "/org/freedesktop/systemd1",
-            "org.freedesktop.systemd1.Manager",
-        )
-        .await?;
-
-        let state: String = proxy.call("GetUnitFileState", &(service_name,)).await?;
-        Ok(state)
     }
 
     pub async fn get_service_logs(&self, service_name: &str, lines: u32) -> Result<String> {

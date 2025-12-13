@@ -5,7 +5,6 @@ use crate::fl;
 use crate::systemd::{ServiceScope, SystemdManager, SystemdService};
 use cosmic::app::context_drawer;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
-use cosmic::iced::alignment::Horizontal;
 use cosmic::iced::{Alignment, Length, Subscription};
 use cosmic::widget::{self, about::About, icon, menu, nav_bar};
 use cosmic::prelude::*;
@@ -113,10 +112,15 @@ impl cosmic::Application for AppModel {
         // Create the about widget
         let about = About::default()
             .name(fl!("app-title"))
+            .author("Nikola Lazarov")
             .icon(widget::icon::from_svg_bytes(APP_ICON))
             .version(env!("CARGO_PKG_VERSION"))
-            .links([(fl!("repository"), REPOSITORY)])
-            .license(env!("CARGO_PKG_LICENSE"));
+            .links([
+                (fl!("support"), REPOSITORY),
+                (fl!("repository"), REPOSITORY),
+            ])
+            .license(env!("CARGO_PKG_LICENSE"))
+            .developers([("Nikola Lazarov", "nikola.n.lazarov@outlook.com")]);
 
         // Construct the app model with the runtime's core.
         let mut app = AppModel {
@@ -680,7 +684,7 @@ impl AppModel {
         let service_name3 = service.name.clone();
 
 
-        let mut controls;
+        let controls;
 
         if service.sub_state == "running" {
             controls = widget::row()

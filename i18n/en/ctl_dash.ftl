@@ -1,6 +1,7 @@
-app-title = Ctl Dash
+app-title = CTL Dash
 about = About
 repository = Repository
+support = Support
 view = View
 welcome = Welcome to COSMIC! ✨
 page-id = Page { $num }
