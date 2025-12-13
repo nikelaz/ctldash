@@ -11,6 +11,7 @@ pub struct SystemdService {
     pub active_state: String,
     pub sub_state: String,
     pub unit_path: String,
+    pub unit_file_state: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -41,37 +42,93 @@ impl SystemdManager {
         )
         .await?;
 
-        let units: Vec<(
-            String,
-            String,
-            String,
-            String,
-            String,
-            String,
-            zbus::zvariant::OwnedObjectPath,
-            u32,
-            String,
-            zbus::zvariant::OwnedObjectPath,
-        )> = proxy.call("ListUnits", &()).await?;
+        // Use ListUnitFiles to get all service files, not just loaded units
+        let unit_files: Vec<(String, String)> = proxy.call("ListUnitFiles", &()).await?;
 
-        let services: Vec<SystemdService> = units
-            .into_iter()
-            .filter(|(name, _, _, _, _, _, _, _, _, _)| name.ends_with(".service"))
-            .map(
-                |(name, description, load_state, active_state, sub_state, _, unit_path, _, _, _)| {
-                    SystemdService {
-                        name,
-                        description,
-                        load_state,
-                        active_state,
-                        sub_state,
-                        unit_path: unit_path.to_string(),
-                    }
-                },
-            )
-            .collect();
+        let mut services: Vec<SystemdService> = Vec::new();
+        
+        for (unit_path, unit_file_state) in unit_files {
+            // Extract service name from path
+            let name = std::path::Path::new(&unit_path)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_string();
+            
+            if !name.ends_with(".service") {
+                continue;
+            }
+            
+            // Try to get unit properties for loaded services
+            let unit_obj_path = format!("/org/freedesktop/systemd1/unit/{}", 
+                name.replace("-", "_2d").replace(".", "_2e"));
+            
+            let (description, load_state, active_state, sub_state) = 
+                self.get_unit_properties(&name).await
+                    .unwrap_or_else(|_| (
+                        String::new(),
+                        "not-loaded".to_string(),
+                        "inactive".to_string(),
+                        "dead".to_string()
+                    ));
+            
+            services.push(SystemdService {
+                name,
+                description,
+                load_state,
+                active_state,
+                sub_state,
+                unit_path,
+                unit_file_state,
+            });
+        }
 
         Ok(services)
+    }
+
+    async fn get_unit_properties(&self, service_name: &str) -> Result<(String, String, String, String)> {
+        let proxy = zbus::Proxy::new(
+            &self.connection,
+            "org.freedesktop.systemd1",
+            "/org/freedesktop/systemd1",
+            "org.freedesktop.systemd1.Manager",
+        )
+        .await?;
+
+        // Try to load the unit to get its properties
+        let unit_path: zbus::zvariant::OwnedObjectPath = proxy
+            .call("LoadUnit", &(service_name,))
+            .await?;
+
+        let unit_proxy = zbus::Proxy::new(
+            &self.connection,
+            "org.freedesktop.systemd1",
+            unit_path.as_str(),
+            "org.freedesktop.systemd1.Unit",
+        )
+        .await?;
+
+        let description: String = unit_proxy
+            .get_property("Description")
+            .await
+            .unwrap_or_default();
+        
+        let load_state: String = unit_proxy
+            .get_property("LoadState")
+            .await
+            .unwrap_or_else(|_| "unknown".to_string());
+        
+        let active_state: String = unit_proxy
+            .get_property("ActiveState")
+            .await
+            .unwrap_or_else(|_| "inactive".to_string());
+        
+        let sub_state: String = unit_proxy
+            .get_property("SubState")
+            .await
+            .unwrap_or_else(|_| "dead".to_string());
+
+        Ok((description, load_state, active_state, sub_state))
     }
 
     pub async fn get_service_properties(
@@ -135,20 +192,42 @@ impl SystemdManager {
     }
 
     pub async fn enable_service(&self, service_name: &str) -> Result<()> {
-        let proxy = zbus::Proxy::new(
-            &self.connection,
-            "org.freedesktop.systemd1",
-            "/org/freedesktop/systemd1",
-            "org.freedesktop.systemd1.Manager",
-        )
-        .await?;
+        // Use pkexec or polkit to execute systemctl enable
+        let output = tokio::process::Command::new("pkexec")
+            .arg("systemctl")
+            .arg("enable")
+            .arg(service_name)
+            .output()
+            .await
+            .map_err(|e| zbus::Error::Failure(format!("Failed to execute pkexec: {}", e)))?;
 
-        let _: (bool, Vec<(String, String, String)>) =
-            proxy.call("EnableUnitFiles", &(vec![service_name], false, true)).await?;
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(zbus::Error::Failure(format!("Failed to enable service: {}", error)));
+        }
+
         Ok(())
     }
 
     pub async fn disable_service(&self, service_name: &str) -> Result<()> {
+        // Use pkexec or polkit to execute systemctl disable
+        let output = tokio::process::Command::new("pkexec")
+            .arg("systemctl")
+            .arg("disable")
+            .arg(service_name)
+            .output()
+            .await
+            .map_err(|e| zbus::Error::Failure(format!("Failed to execute pkexec: {}", e)))?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(zbus::Error::Failure(format!("Failed to disable service: {}", error)));
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_unit_file_state(&self, service_name: &str) -> Result<String> {
         let proxy = zbus::Proxy::new(
             &self.connection,
             "org.freedesktop.systemd1",
@@ -157,9 +236,8 @@ impl SystemdManager {
         )
         .await?;
 
-        let _: Vec<(String, String, String)> =
-            proxy.call("DisableUnitFiles", &(vec![service_name], false)).await?;
-        Ok(())
+        let state: String = proxy.call("GetUnitFileState", &(service_name,)).await?;
+        Ok(state)
     }
 
     pub async fn get_service_logs(&self, service_name: &str, lines: u32) -> Result<String> {

@@ -41,6 +41,8 @@ pub struct AppModel {
     service_logs: String,
     /// Loading state
     is_loading: bool,
+    /// Search filter for services
+    search_filter: String,
 }
 
 /// Messages emitted by the application and its widgets.
@@ -56,12 +58,15 @@ pub enum Message {
     StartService(String),
     StopService(String),
     RestartService(String),
+    EnableService(String),
+    DisableService(String),
     ServiceActionComplete,
     RefreshServices,
     LogsLoaded(String),
     RefreshCurrentService,
     CurrentServiceRefreshed(Option<SystemdService>, String),
     Tick,
+    SearchFilterChanged(String),
 }
 
 /// Create a COSMIC application from the app model
@@ -133,6 +138,7 @@ impl cosmic::Application for AppModel {
             current_scope: ServiceScope::System,
             service_logs: "".to_string(),
             is_loading: false,
+            search_filter: String::new(),
         };
 
         // Create a startup command that sets the window title and loads services.
@@ -337,6 +343,44 @@ impl cosmic::Application for AppModel {
                 );
             }
 
+            Message::EnableService(name) => {
+                eprintln!("EnableService called for: {}", name);
+                let scope = self.current_scope.clone();
+                return Task::perform(
+                    async move {
+                        eprintln!("Attempting to enable service: {} with scope: {:?}", name, scope);
+                        if let Ok(manager) = SystemdManager::new(scope).await {
+                            match manager.enable_service(&name).await {
+                                Ok(_) => eprintln!("Successfully enabled: {}", name),
+                                Err(e) => eprintln!("Failed to enable {}: {:?}", name, e),
+                            }
+                        } else {
+                            eprintln!("Failed to create SystemdManager");
+                        }
+                    },
+                    |_| cosmic::Action::from(Message::ServiceActionComplete),
+                );
+            }
+
+            Message::DisableService(name) => {
+                eprintln!("DisableService called for: {}", name);
+                let scope = self.current_scope.clone();
+                return Task::perform(
+                    async move {
+                        eprintln!("Attempting to disable service: {} with scope: {:?}", name, scope);
+                        if let Ok(manager) = SystemdManager::new(scope).await {
+                            match manager.disable_service(&name).await {
+                                Ok(_) => eprintln!("Successfully disabled: {}", name),
+                                Err(e) => eprintln!("Failed to disable {}: {:?}", name, e),
+                            }
+                        } else {
+                            eprintln!("Failed to create SystemdManager");
+                        }
+                    },
+                    |_| cosmic::Action::from(Message::ServiceActionComplete),
+                );
+            }
+
             Message::ServiceActionComplete | Message::RefreshServices => {
                 let scope = self.current_scope;
                 return Task::perform(async {}, move |_| {
@@ -412,6 +456,10 @@ impl cosmic::Application for AppModel {
                 self.config = config;
             }
 
+            Message::SearchFilterChanged(filter) => {
+                self.search_filter = filter;
+            }
+
             Message::LaunchUrl(url) => match open::that_detached(&url) {
                 Ok(()) => {}
                 Err(err) => {
@@ -426,6 +474,7 @@ impl cosmic::Application for AppModel {
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<cosmic::Action<Self::Message>> {
         self.nav.activate(id);
         self.selected_service = None;
+        self.search_filter.clear();
 
         let scope = match self.nav.active_data::<Page>().unwrap() {
             Page::SystemServices => ServiceScope::System,
@@ -470,6 +519,23 @@ impl AppModel {
             .spacing(spacing.space_m)
             .align_y(Alignment::Center);
 
+        let search_input = widget::text_input("Search services...", &self.search_filter)
+            .on_input(Message::SearchFilterChanged)
+            .width(Length::Fill);
+
+        let filtered_services: Vec<&SystemdService> = if self.search_filter.is_empty() {
+            services.iter().collect()
+        } else {
+            let filter_lower = self.search_filter.to_lowercase();
+            services
+                .iter()
+                .filter(|s| {
+                    s.name.to_lowercase().contains(&filter_lower)
+                        || s.description.to_lowercase().contains(&filter_lower)
+                })
+                .collect()
+        };
+
         let list_header = widget::row()
             .push(widget::text("Service").width(Length::FillPortion(3)))
             .push(widget::text("Description").width(Length::FillPortion(3)))
@@ -481,18 +547,24 @@ impl AppModel {
 
         if self.is_loading {
             list = list.add(widget::text("Loading services..."));
-        } else if services.is_empty() {
-            list = list.add(widget::text("No services found"));
+        } else if filtered_services.is_empty() {
+            if self.search_filter.is_empty() {
+                list = list.add(widget::text("No services found"));
+            } else {
+                list = list.add(widget::text("No services match your search"));
+            }
         } else {
-            for service in services {
+            for service in filtered_services {
                 let row_content = widget::row()
                     .push(
                         widget::text(&service.name)
                             .width(Length::FillPortion(3))
+                            .wrapping(cosmic::iced::widget::text::Wrapping::WordOrGlyph)
                     )
                     .push(
                         widget::text(&service.description)
                             .width(Length::FillPortion(3))
+                            .wrapping(cosmic::iced::widget::text::Wrapping::Word)
                     )
                     .push(
                         widget::text(&service.active_state)
@@ -521,6 +593,7 @@ impl AppModel {
 
         widget::column()
             .push(header)
+            .push(search_input)
             .push(services_table)
             .spacing(spacing.space_m)
             .into()
@@ -560,9 +633,27 @@ impl AppModel {
             .push(widget::text(&service.load_state))
             .spacing(spacing.space_s);
 
+        let is_enabled = service.unit_file_state == "enabled";
+        let can_toggle = service.unit_file_state == "enabled" || service.unit_file_state == "disabled";
+        let service_name_for_toggle = service.name.clone();
+        
+        let enabled_toggler = if can_toggle {
+            widget::toggler(is_enabled)
+                .on_toggle(move |enabled| {
+                    if enabled {
+                        Message::EnableService(service_name_for_toggle.clone())
+                    } else {
+                        Message::DisableService(service_name_for_toggle.clone())
+                    }
+                })
+        } else {
+            widget::toggler(is_enabled)
+        };
+        
         let enabled = widget::row()
             .push(widget::text("Enabled:").width(Length::Fixed(120.0)))
-            .push(widget::toggler(service.active_state == "active"))
+            .push(enabled_toggler)
+            .push(widget::text(format!("({})", service.unit_file_state)).size(12))
             .align_y(Alignment::Center)
             .spacing(spacing.space_s);
 
