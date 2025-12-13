@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Ctl Dash
+Comment=Displays services and logs and allows you to enable/disable/start/stop/restart every service.
+Type=Application
+Icon=com.github.nikelaz.CTLDash
+Exec=ctl-dash %F
+Terminal=false
+StartupNotify=true
+Categories=COSMIC
+Keywords=COSMIC
+MimeType=
