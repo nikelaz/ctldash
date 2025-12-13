@@ -59,6 +59,9 @@ pub enum Message {
     ServiceActionComplete,
     RefreshServices,
     LogsLoaded(String),
+    RefreshCurrentService,
+    CurrentServiceRefreshed(Option<SystemdService>, String),
+    Tick,
 }
 
 /// Create a COSMIC application from the app model
@@ -202,9 +205,18 @@ impl cosmic::Application for AppModel {
 
     /// Register subscriptions for this application.
     fn subscription(&self) -> Subscription<Self::Message> {
-        self.core()
+        let config_sub = self.core()
             .watch_config::<Config>(Self::APP_ID)
-            .map(|update| Message::UpdateConfig(update.config))
+            .map(|update| Message::UpdateConfig(update.config));
+
+        let timer_sub = if self.selected_service.is_some() {
+            cosmic::iced::time::every(std::time::Duration::from_secs(5))
+                .map(|_| Message::Tick)
+        } else {
+            Subscription::none()
+        };
+
+        Subscription::batch(vec![config_sub, timer_sub])
     }
 
     /// Handles messages emitted by the application and its widgets.
@@ -330,6 +342,61 @@ impl cosmic::Application for AppModel {
                 return Task::perform(async {}, move |_| {
                     cosmic::Action::from(Message::LoadServices(scope))
                 });
+            }
+
+            Message::Tick => {
+                if self.selected_service.is_some() {
+                    return Task::perform(async {}, |_| {
+                        cosmic::Action::from(Message::RefreshCurrentService)
+                    });
+                }
+            }
+
+            Message::RefreshCurrentService => {
+                if let Some(service) = &self.selected_service {
+                    let service_name = service.name.clone();
+                    let scope = self.current_scope;
+                    return Task::perform(
+                        async move {
+                            let manager = SystemdManager::new(scope).await.ok()?;
+                            let services = manager.list_services().await.ok()?;
+                            let updated_service = services.into_iter().find(|s| s.name == service_name);
+                            let logs = if let Some(_) = &updated_service {
+                                manager.get_service_logs(&service_name, 100).await.unwrap_or_default()
+                            } else {
+                                String::new()
+                            };
+                            Some((updated_service, logs))
+                        },
+                        |result| {
+                            if let Some((service, logs)) = result {
+                                cosmic::Action::from(Message::CurrentServiceRefreshed(service, logs))
+                            } else {
+                                cosmic::Action::from(Message::CurrentServiceRefreshed(None, String::new()))
+                            }
+                        },
+                    );
+                }
+            }
+
+            Message::CurrentServiceRefreshed(service, logs) => {
+                if let Some(updated_service) = service {
+                    self.selected_service = Some(updated_service.clone());
+                    self.service_logs = logs;
+
+                    match self.current_scope {
+                        ServiceScope::System => {
+                            if let Some(index) = self.system_services.iter().position(|s| s.name == updated_service.name) {
+                                self.system_services[index] = updated_service;
+                            }
+                        },
+                        ServiceScope::User => {
+                            if let Some(index) = self.user_services.iter().position(|s| s.name == updated_service.name) {
+                                self.user_services[index] = updated_service;
+                            }
+                        },
+                    }
+                }
             }
 
             Message::ToggleContextPage(context_page) => {
