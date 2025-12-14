@@ -1,0 +1,53 @@
+{
+  "app-id": "com.github.nikelaz.CTLDash",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "24.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.rust-stable"
+  ],
+  "command": "ctl-dash",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=fallback-x11",
+    "--socket=wayland",
+    "--device=dri",
+    "--talk-name=org.freedesktop.systemd1",
+    "--system-talk-name=org.freedesktop.systemd1",
+    "--filesystem=xdg-config/systemd:ro",
+    "--filesystem=/etc/systemd:ro",
+    "--filesystem=/usr/lib/systemd:ro",
+    "--filesystem=/run/systemd:ro"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "env": {
+      "CARGO_HOME": "/run/build/ctl-dash/cargo"
+    }
+  },
+  "modules": [
+    {
+      "name": "ctl-dash",
+      "buildsystem": "simple",
+      "build-commands": [
+        "tar -xf vendor.tar",
+        "cargo --offline fetch --manifest-path Cargo.toml --verbose",
+        "cargo --offline build --release --verbose",
+        "install -Dm755 target/release/ctl-dash -t /app/bin/",
+        "install -Dm644 resources/com.github.nikelaz.CTLDash.desktop /app/share/applications/com.github.nikelaz.CTLDash.desktop",
+        "install -Dm644 resources/com.github.nikelaz.CTLDash.metainfo.xml /app/share/metainfo/com.github.nikelaz.CTLDash.metainfo.xml",
+        "install -Dm644 resources/icons/hicolor/scalable/apps/icon.svg /app/share/icons/hicolor/scalable/apps/com.github.nikelaz.CTLDash.svg"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "."
+        },
+        {
+          "type": "file",
+          "path": "vendor.tar"
+        }
+      ]
+    }
+  ]
+}

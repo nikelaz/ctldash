@@ -5,10 +5,43 @@
   <project_license>MPL-2.0</project_license>
   <name>Ctl Dash</name>
   <summary>Displays services and logs and allows you to enable/disable/start/stop/restart every service.</summary>
-  <icon type="remote" width="64" height="64" scale="1">
-    https://github.com/nikelaz/ctl-dash/raw/main/resources/icons/hicolor/scalable/apps/icon.svg
-  </icon>
+  <description>
+    <p>
+      CTL Dash is a systemd service manager for the COSMIC desktop environment that displays system and user services with their status.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>View all systemd services with their current status</li>
+      <li>Manage both system-wide and user services</li>
+      <li>View detailed information about individual services</li>
+      <li>Start, stop, restart services from the UI</li>
+      <li>Enable and disable services</li>
+      <li>View service logs</li>
+    </ul>
+  </description>
+  <developer id="com.github.nikelaz">
+    <name>Nikola Hristov</name>
+  </developer>
+  <url type="homepage">https://github.com/nikelaz/ctl-dash</url>
+  <url type="bugtracker">https://github.com/nikelaz/ctl-dash/issues</url>
   <url type="vcs-browser">https://github.com/nikelaz/ctl-dash</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Services List</caption>
+      <image>https://github.com/user-attachments/assets/7c70f68b-9cf0-42e8-99fb-16c1ddfd9a9e</image>
+    </screenshot>
+    <screenshot>
+      <caption>Service Details</caption>
+      <image>https://github.com/user-attachments/assets/70ded06c-9c2d-44cb-8ac8-5f586477b566</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.0.0" date="2025-12-13">
+      <description>
+        <p>Initial release</p>
+      </description>
+    </release>
+  </releases>
   <launchable type="desktop-id">com.github.nikelaz.CTLDash.desktop</launchable>
   <provides>
     <id>com.github.nikelaz.CTLDash</id>
