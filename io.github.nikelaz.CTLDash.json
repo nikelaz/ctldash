@@ -12,12 +12,9 @@
     "--socket=fallback-x11",
     "--socket=wayland",
     "--device=dri",
+    "--talk-name=org.freedesktop.Flatpak",
     "--talk-name=org.freedesktop.systemd1",
-    "--system-talk-name=org.freedesktop.systemd1",
-    "--filesystem=xdg-config/systemd:ro",
-    "--filesystem=/etc/systemd:ro",
-    "--filesystem=/usr/lib/systemd:ro",
-    "--filesystem=/run/systemd:ro"
+    "--system-talk-name=org.freedesktop.systemd1"
   ],
   "build-options": {
     "append-path": "/usr/lib/sdk/rust-stable/bin",
