@@ -32,6 +32,11 @@ impl SystemdManager {
         Ok(Self { connection })
     }
 
+    fn is_flatpak() -> bool {
+        std::path::Path::new("/.flatpak-info").exists() || 
+        std::env::var("FLATPAK_ID").is_ok()
+    }
+
     pub async fn list_services(&self) -> Result<Vec<SystemdService>> {
         let proxy = zbus::Proxy::new(
             &self.connection,
@@ -169,14 +174,25 @@ impl SystemdManager {
     }
 
     pub async fn enable_service(&self, service_name: &str) -> Result<()> {
-        // Use pkexec or polkit to execute systemctl enable
-        let output = tokio::process::Command::new("pkexec")
-            .arg("systemctl")
-            .arg("enable")
-            .arg(service_name)
-            .output()
-            .await
-            .map_err(|e| zbus::Error::Failure(format!("Failed to execute pkexec: {}", e)))?;
+        let output = if Self::is_flatpak() {
+            tokio::process::Command::new("flatpak-spawn")
+                .arg("--host")
+                .arg("pkexec")
+                .arg("systemctl")
+                .arg("enable")
+                .arg(service_name)
+                .output()
+                .await
+                .map_err(|e| zbus::Error::Failure(format!("Failed to execute flatpak-spawn: {}", e)))?
+        } else {
+            tokio::process::Command::new("pkexec")
+                .arg("systemctl")
+                .arg("enable")
+                .arg(service_name)
+                .output()
+                .await
+                .map_err(|e| zbus::Error::Failure(format!("Failed to execute pkexec: {}", e)))?
+        };
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
@@ -187,14 +203,25 @@ impl SystemdManager {
     }
 
     pub async fn disable_service(&self, service_name: &str) -> Result<()> {
-        // Use pkexec or polkit to execute systemctl disable
-        let output = tokio::process::Command::new("pkexec")
-            .arg("systemctl")
-            .arg("disable")
-            .arg(service_name)
-            .output()
-            .await
-            .map_err(|e| zbus::Error::Failure(format!("Failed to execute pkexec: {}", e)))?;
+        let output = if Self::is_flatpak() {
+            tokio::process::Command::new("flatpak-spawn")
+                .arg("--host")
+                .arg("pkexec")
+                .arg("systemctl")
+                .arg("disable")
+                .arg(service_name)
+                .output()
+                .await
+                .map_err(|e| zbus::Error::Failure(format!("Failed to execute flatpak-spawn: {}", e)))?
+        } else {
+            tokio::process::Command::new("pkexec")
+                .arg("systemctl")
+                .arg("disable")
+                .arg(service_name)
+                .output()
+                .await
+                .map_err(|e| zbus::Error::Failure(format!("Failed to execute pkexec: {}", e)))?
+        };
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
@@ -211,15 +238,29 @@ impl SystemdManager {
             format!("{}.service", service_name)
         };
 
-        let output = tokio::process::Command::new("journalctl")
-            .arg("-u")
-            .arg(&name)
-            .arg("-n")
-            .arg(lines.to_string())
-            .arg("--no-pager")
-            .output()
-            .await
-            .map_err(|e| zbus::Error::Failure(format!("Failed to execute journalctl: {}", e)))?;
+        let output = if Self::is_flatpak() {
+            tokio::process::Command::new("flatpak-spawn")
+                .arg("--host")
+                .arg("journalctl")
+                .arg("-u")
+                .arg(&name)
+                .arg("-n")
+                .arg(lines.to_string())
+                .arg("--no-pager")
+                .output()
+                .await
+                .map_err(|e| zbus::Error::Failure(format!("Failed to execute flatpak-spawn: {}", e)))?
+        } else {
+            tokio::process::Command::new("journalctl")
+                .arg("-u")
+                .arg(&name)
+                .arg("-n")
+                .arg(lines.to_string())
+                .arg("--no-pager")
+                .output()
+                .await
+                .map_err(|e| zbus::Error::Failure(format!("Failed to execute journalctl: {}", e)))?
+        };
 
         let logs = String::from_utf8_lossy(&output.stdout).to_string();
         Ok(logs)
