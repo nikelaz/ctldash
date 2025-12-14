@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<meta name="description" content="A modern systemd service manager for the COSMIC desktop environment. Manage, monitor, and control system and user services with ease." />
+		<title>CTL Dash - systemd Service Manager for COSMIC</title>
+		
+		<!-- Open Graph / Social Media -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="CTL Dash - systemd Service Manager for COSMIC" />
+		<meta property="og:description" content="A modern systemd service manager for the COSMIC desktop environment. Manage, monitor, and control system and user services with ease." />
+		<meta property="og:image" content="/screenshot-services.png" />
+		<meta property="og:url" content="https://github.com/nikelaz/ctl-dash" />
+		<meta name="twitter:card" content="summary_large_image" />
+		
+		<!-- Structured Data -->
+		<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "SoftwareApplication",
+			"name": "CTL Dash",
+			"applicationCategory": "SystemApplication",
+			"operatingSystem": "Linux",
+			"description": "A modern systemd service manager for the COSMIC desktop environment. Manage, monitor, and control system and user services with ease.",
+			"url": "https://github.com/nikelaz/ctl-dash",
+			"downloadUrl": "https://flathub.org/apps/com.github.nikelaz.ctl-dash",
+			"softwareVersion": "1.0.0",
+			"datePublished": "2024-12-14",
+			"dateModified": "2024-12-14",
+			"author": {
+				"@type": "Person",
+				"name": "Nikola Lazarov",
+				"url": "https://nikolalazarov.com"
+			},
+			"publisher": {
+				"@type": "Organization",
+				"name": "CTL Dash"
+			},
+			"license": "https://www.mozilla.org/en-US/MPL/2.0/",
+			"image": "/screenshot-services.png",
+			"screenshot": [
+				"/screenshot-services.png",
+				"/screenshot-details.png"
+			],
+			"aggregateRating": {
+				"@type": "AggregateRating",
+				"ratingValue": "5",
+				"ratingCount": "1"
+			},
+			"offers": {
+				"@type": "Offer",
+				"price": "0",
+				"priceCurrency": "USD"
+			},
+			"featureList": [
+				"View all systemd services with current status",
+				"Manage both system-wide and user-specific services",
+				"View detailed information about individual services",
+				"Start, stop, restart, enable, and disable services",
+				"Access service logs directly within the application",
+				"Built natively for COSMIC desktop environment"
+			],
+			"requirements": "COSMIC desktop environment, systemd",
+			"softwareHelp": {
+				"@type": "CreativeWork",
+				"url": "https://github.com/nikelaz/ctl-dash#readme"
+			},
+			"releaseNotes": "https://github.com/nikelaz/ctl-dash/releases",
+			"codeRepository": "https://github.com/nikelaz/ctl-dash"
+		}
+		</script>
+		<style>
+			:root {
+        --cosmic-purple: #1c1d83;
+        --cosmic-purple-dark: #0c0633;
+        --cosmic-purple-light: #2f2d9e;
+				--cosmic-lavender: #d7d7ff;
+				--text-dark: #1a1a1a;
+				--text-light: #f5f5f5;
+				--bg-light: #ffffff;
+				--bg-dark: #0f0f0f;
+				--shadow: rgba(0, 0, 0, 0.1);
+			}
+			
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+				line-height: 1.6;
+				color: var(--text-dark);
+				background: var(--bg-light);
+			}
+			
+			.container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 0 2rem;
+			}
+			
+			header {
+				background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-purple-dark) 100%);
+				color: var(--text-light);
+				padding: 1rem 0;
+				position: sticky;
+				top: 0;
+				z-index: 100;
+				box-shadow: 0 2px 10px var(--shadow);
+			}
+			
+			nav {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			
+			.logo {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				font-size: 1.5rem;
+				font-weight: 700;
+			}
+			
+			.logo img {
+				width: 48px;
+				height: auto;
+			}
+			
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				list-style: none;
+			}
+			
+			.nav-links a {
+				color: var(--text-light);
+				text-decoration: none;
+				transition: opacity 0.2s;
+			}
+			
+			.nav-links a:hover {
+				opacity: 0.8;
+			}
+			
+			.hero {
+        background: linear-gradient(135deg,var(--cosmic-purple-light) 0%,var(--cosmic-purple) 100%);
+				color: var(--text-light);
+				padding: 6rem 0;
+				text-align: center;
+			}
+			
+			.hero h1 {
+				font-size: 3.5rem;
+				margin-bottom: 1.5rem;
+				line-height: 1.2;
+			}
+			
+			.hero p {
+				font-size: 1.3rem;
+				margin-bottom: 2.5rem;
+				opacity: 0.95;
+				max-width: 700px;
+				margin-left: auto;
+				margin-right: auto;
+			}
+			
+			.cta-buttons {
+				display: flex;
+				gap: 1rem;
+				justify-content: center;
+				flex-wrap: wrap;
+			}
+			
+			.btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 1rem 2rem;
+				font-size: 1.1rem;
+				font-weight: 600;
+				text-decoration: none;
+				border-radius: 8px;
+				transition: all 0.3s;
+				border: none;
+				cursor: pointer;
+			}
+			
+			.btn-primary {
+				background: var(--text-light);
+				color: var(--cosmic-purple);
+			}
+			
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+			}
+			
+			.btn-secondary {
+				background: rgba(255, 255, 255, 0.1);
+				color: var(--text-light);
+				border: 2px solid var(--text-light);
+			}
+			
+			.btn-secondary:hover {
+				background: rgba(255, 255, 255, 0.2);
+			}
+			
+			.flathub-badge {
+				height: 56px;
+				width: auto;
+			}
+			
+			section {
+				padding: 5rem 0;
+			}
+			
+			section h2 {
+				font-size: 2.5rem;
+				margin-bottom: 3rem;
+				text-align: center;
+			}
+			
+			.features {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+				gap: 2rem;
+			}
+			
+			.feature {
+				padding: 2rem;
+				background: white;
+				border-radius: 12px;
+				box-shadow: 0 4px 15px var(--shadow);
+			}	
+			
+			.feature-icon {
+				font-size: 3rem;
+				margin-bottom: 1rem;
+			}
+			
+			.feature h3 {
+				font-size: 1.5rem;
+				margin-bottom: 1rem;
+				color: var(--cosmic-purple);
+			}
+			
+			.screenshots {
+				background: #f8f8f8;
+			}
+			
+			.carousel {
+				position: relative;
+				max-width: 900px;
+				margin: 0 auto;
+			}
+			
+			.carousel-container {
+				position: relative;
+				overflow: hidden;
+				border-radius: 12px;
+				box-shadow: 0 8px 30px var(--shadow);
+			}
+			
+			.carousel-slide {
+				display: none;
+				animation: fadeIn 0.25s;
+			}
+			
+			.carousel-slide.active {
+				display: block;
+			}
+			
+			.carousel-slide img {
+				width: 100%;
+				height: auto;
+				display: block;
+			}
+			
+			.screenshot-caption {
+				padding: 1rem;
+				background: white;
+				text-align: center;
+				font-weight: 600;
+				color: var(--cosmic-purple);
+			}
+			
+			.carousel-btn {
+				position: absolute;
+				top: 50%;
+				transform: translateY(-50%);
+				background: rgba(255, 255, 255, 0.9);
+				color: var(--cosmic-purple);
+				border: none;
+				font-size: 3rem;
+        width: 40px;
+        height: 40px;
+        padding: 6px;
+				border-radius: 50%;
+				cursor: pointer;
+				transition: all 0.3s;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10;
+			}
+			
+			.carousel-btn:hover {
+				background: white;
+				transform: translateY(-50%) scale(1.1);
+			}
+			
+			.carousel-btn.prev {
+				left: 1rem;
+			}
+			
+			.carousel-btn.next {
+				right: 1rem;
+			}
+			
+			.carousel-dots {
+				display: flex;
+				justify-content: center;
+				gap: 0.5rem;
+				margin-top: 1.5rem;
+			}
+			
+			.dot {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: #ccc;
+				border: none;
+				cursor: pointer;
+				transition: all 0.3s;
+			}
+			
+			.dot.active {
+				background: var(--cosmic-purple);
+				transform: scale(1.2);
+			}
+			
+			.dot:hover {
+				background: var(--cosmic-purple-light);
+			}
+			
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+				}
+				to {
+					opacity: 1;
+				}
+			}
+			
+			.install {
+				text-align: center;
+				background: linear-gradient(135deg, var(--cosmic-purple-light) 0%, var(--cosmic-purple) 100%);
+				color: var(--text-light);
+			}
+			
+			.install h2 {
+				color: var(--text-light);
+			}
+			
+			.install p {
+				font-size: 1.2rem;
+				margin-bottom: 2rem;
+			}
+			
+			footer {
+				background: var(--cosmic-purple-dark);
+				color: var(--text-light);
+				padding: 2rem 0;
+				text-align: center;
+			}
+			
+			footer a {
+				color: var(--cosmic-lavender);
+				text-decoration: none;
+			}
+			
+			footer a:hover {
+				text-decoration: underline;
+			}
+			
+			@media (max-width: 768px) {
+				.hero h1 {
+					font-size: 2.5rem;
+				}
+				
+				.hero p {
+					font-size: 1.1rem;
+				}
+				
+				.nav-links {
+					display: none;
+				}
+				
+				.carousel-btn {
+					width: 40px;
+					height: 40px;
+					font-size: 2rem;
+				}
+				
+				.carousel-btn.prev {
+					left: 0.5rem;
+				}
+				
+				.carousel-btn.next {
+					right: 0.5rem;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<header>
+			<nav class="container">
+				<div class="logo">
+					<img src="/icon.svg" alt="CTL Dash Icon" />
+					<span>CTL Dash</span>
+				</div>
+				<ul class="nav-links">
+					<li><a href="#features">Features</a></li>
+					<li><a href="#screenshots">Screenshots</a></li>
+					<li><a href="#install">Install</a></li>
+					<li><a href="https://github.com/nikelaz/ctl-dash" target="_blank">GitHub</a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<section class="hero">
+			<div class="container">
+				<h1>Manage systemd Services with Ease</h1>
+				<p>A modern, intuitive systemd service manager built for the COSMIC desktop environment. Control, monitor, and manage all your system and user services from one beautiful interface.</p>
+				<div class="cta-buttons">
+					<a href="#install" class="btn btn-primary">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+						</svg>
+						Get CTL Dash
+					</a>
+					<a href="https://github.com/nikelaz/ctl-dash" target="_blank" class="btn btn-secondary">
+						View on GitHub
+					</a>
+				</div>
+			</div>
+		</section>
+
+		<section id="features">
+			<div class="container">
+				<h2>Features</h2>
+				<div class="features">
+					<div class="feature">
+						<div class="feature-icon">📋</div>
+						<h3>Service List</h3>
+						<p>View all systemd services with their current status at a glance. Quickly filter and search through your services.</p>
+					</div>
+					<div class="feature">
+						<div class="feature-icon">👤</div>
+						<h3>System & User Services</h3>
+						<p>Manage both system-wide services and user-specific services in one unified interface.</p>
+					</div>
+					<div class="feature">
+						<div class="feature-icon">🔍</div>
+						<h3>Service Details</h3>
+						<p>View comprehensive information about individual services including status, configuration, and dependencies.</p>
+					</div>
+					<div class="feature">
+						<div class="feature-icon">⚡</div>
+						<h3>Service Control</h3>
+						<p>Start, stop, restart, enable, and disable services directly from the UI with a single click.</p>
+					</div>
+					<div class="feature">
+						<div class="feature-icon">📝</div>
+						<h3>View Logs</h3>
+						<p>Access service logs directly within the application to troubleshoot and monitor your services.</p>
+					</div>
+					<div class="feature">
+						<div class="feature-icon">🎨</div>
+						<h3>COSMIC Design</h3>
+						<p>Built natively for COSMIC desktop with beautiful, modern UI that follows COSMIC design principles.</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="screenshots" class="screenshots">
+			<div class="container">
+				<h2>Screenshots</h2>
+				<div class="carousel">
+					<div class="carousel-container">
+						<div class="carousel-slide active">
+							<img src="/screenshot-services.png" width="900" height="529" alt="CTL Dash Services List" />
+							<div class="screenshot-caption">Services List View</div>
+						</div>
+						<div class="carousel-slide">
+							<img src="/screenshot-details.png" width="900" height="529" alt="CTL Dash Service Details" />
+							<div class="screenshot-caption">Service Details View</div>
+						</div>
+					</div>
+          <button class="carousel-btn prev" aria-label="Previous screenshot">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+              <path d="M169.4 297.4C156.9 309.9 156.9 330.2 169.4 342.7L361.4 534.7C373.9 547.2 394.2 547.2 406.7 534.7C419.2 522.2 419.2 501.9 406.7 489.4L237.3 320L406.6 150.6C419.1 138.1 419.1 117.8 406.6 105.3C394.1 92.8 373.8 92.8 361.3 105.3L169.3 297.3z"/>
+            </svg>
+          </button>
+          <button class="carousel-btn next" aria-label="Next screenshot">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+              <path d="M471.1 297.4C483.6 309.9 483.6 330.2 471.1 342.7L279.1 534.7C266.6 547.2 246.3 547.2 233.8 534.7C221.3 522.2 221.3 501.9 233.8 489.4L403.2 320L233.9 150.6C221.4 138.1 221.4 117.8 233.9 105.3C246.4 92.8 266.7 92.8 279.2 105.3L471.2 297.3z"/>
+            </svg>
+          </button>
+					<div class="carousel-dots">
+						<button class="dot active" aria-label="Go to screenshot 1"></button>
+						<button class="dot" aria-label="Go to screenshot 2"></button>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="install" class="install">
+			<div class="container">
+				<h2>Get CTL Dash</h2>
+				<p>Install CTL Dash from Flathub with one click</p>
+				<div class="cta-buttons">
+					<a href="https://flathub.org/apps/com.github.nikelaz.ctl-dash" target="_blank">
+						<img src="/flathub-badge.svg" alt="Download on Flathub" class="flathub-badge" />
+					</a>
+				</div>
+			</div>
+		</section>
+
+		<footer>
+			<div class="container">
+				<p>&copy; 2025 CTL Dash. Licensed under <a href="https://github.com/nikelaz/ctl-dash/blob/main/LICENSE" target="_blank">MPL-2.0</a>.</p>
+				<p>Built with ❤️ for the COSMIC desktop environment.</p>
+			</div>
+		</footer>
+
+		<script>
+			let currentSlide = 0;
+			const slides = document.querySelectorAll('.carousel-slide');
+			const dots = document.querySelectorAll('.dot');
+			const totalSlides = slides.length;
+
+			function showSlide(n) {
+				slides[currentSlide].classList.remove('active');
+				dots[currentSlide].classList.remove('active');
+				
+				currentSlide = (n + totalSlides) % totalSlides;
+				
+				slides[currentSlide].classList.add('active');
+				dots[currentSlide].classList.add('active');
+			}
+
+			function nextSlide() {
+				showSlide(currentSlide + 1);
+			}
+
+			function prevSlide() {
+				showSlide(currentSlide - 1);
+			}
+
+			document.querySelector('.next').addEventListener('click', nextSlide);
+			document.querySelector('.prev').addEventListener('click', prevSlide);
+
+			dots.forEach((dot, index) => {
+				dot.addEventListener('click', () => showSlide(index));
+			});
+		</script>
+	</body>
+</html>
