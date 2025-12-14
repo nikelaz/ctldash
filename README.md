@@ -19,7 +19,7 @@ A systemd service manager for the COSMIC desktop environment that displays syste
 
 ## Installation
 
-A [justfile](./justfile) is included by default for the [casey/just][just] command runner.
+A [justfile](./justfile) is included by default for the [casey/just](https://github.com/casey/just) command runner.
 
 - `just` builds the application with the default `just build-release` recipe
 - `just run` builds and runs the application
