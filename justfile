@@ -1,7 +1,7 @@
 # Name of the application's binary.
 name := 'ctl-dash'
 # The unique ID of the application.
-appid := 'com.github.nikelaz.CTLDash'
+appid := 'io.github.nikelaz.CTLDash'
 
 # Path to root file system, which defaults to `/`.
 rootdir := ''

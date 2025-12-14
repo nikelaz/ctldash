@@ -33,7 +33,7 @@ impl cosmic::Application for AppModel {
     type Executor = cosmic::executor::Default;
     type Flags = ();
     type Message = Message;
-    const APP_ID: &'static str = "com.github.nikelaz.CtlDash";
+    const APP_ID: &'static str = "io.github.nikelaz.CtlDash";
 
     fn core(&self) -> &cosmic::Core {
         &self.core
