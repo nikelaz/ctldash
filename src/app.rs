@@ -24,6 +24,7 @@ pub struct AppModel {
     pub(crate) user_services: Vec<SystemdService>,
     pub(crate) selected_service: Option<SystemdService>,
     pub(crate) current_scope: ServiceScope,
+    pub current_page: Page,
     pub service_logs: String,
     pub is_loading: bool,
     pub search_filter: String,
@@ -84,6 +85,7 @@ impl cosmic::Application for AppModel {
             user_services: Vec::new(),
             selected_service: None,
             current_scope: ServiceScope::System,
+            current_page: Page::SystemServices,
             service_logs: "".to_string(),
             is_loading: false,
             search_filter: String::new(),
@@ -140,14 +142,16 @@ impl cosmic::Application for AppModel {
 
         let content: Element<_>;
 
-        if let Some(service) = &self.selected_service {
-            content = views::view_service_detail(self, service);
-        }
-        else {
-            content = match self.nav.active_data::<Page>().unwrap() {
-                Page::SystemServices => views::view_services_list(self, &self.system_services, fl!("system-services")),
-                Page::UserServices => views::view_services_list(self, &self.user_services, fl!("user-services")),
-            };
+        match &self.current_page {
+            Page::SystemServices => {
+                content = views::view_services_list(self, &self.system_services, fl!("system-services"));
+            },
+            Page::UserServices => {
+                content = views::view_services_list(self, &self.user_services, fl!("user-services"));
+            },
+            Page::Details => {
+                content = views::view_service_detail(self, self.selected_service.as_ref());
+            },
         }
 
         widget::container(content)
@@ -160,7 +164,7 @@ impl cosmic::Application for AppModel {
     /// Register subscriptions for this application.
     fn subscription(&self) -> Subscription<Self::Message> {
         if self.selected_service.is_some() {
-            cosmic::iced::time::every(std::time::Duration::from_secs(5))
+            cosmic::iced::time::every(std::time::Duration::from_secs(1))
                 .map(|_| Message::Tick)
         } else {
             Subscription::none()
@@ -177,10 +181,15 @@ impl cosmic::Application for AppModel {
         self.selected_service = None;
         self.search_filter.clear();
 
-        let scope = match self.nav.active_data::<Page>().unwrap() {
-            Page::SystemServices => ServiceScope::System,
-            Page::UserServices => ServiceScope::User,
-        };
+        let mut scope = ServiceScope::System;
+
+        let active_nav_page = self.nav.active_data::<Page>().unwrap();
+
+        self.current_page = *active_nav_page;
+
+        if *active_nav_page == Page::UserServices {
+            scope = ServiceScope::User;
+        }
 
         let title_command = self.update_title();
         let load_command = Task::perform(async {}, move |_| {

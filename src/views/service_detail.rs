@@ -11,7 +11,7 @@ use cosmic::Element;
 
 pub fn view_service_detail<'a>(
     app: &'a AppModel,
-    service: &'a SystemdService,
+    service: Option<&'a SystemdService>,
 ) -> Element<'a, Message> {
     let spacing = cosmic::theme::spacing();
     
@@ -31,6 +31,7 @@ pub fn view_service_detail<'a>(
     let previous_button_label = match app.nav.active_data::<Page>().unwrap() {
         Page::SystemServices => all_system_services,
         Page::UserServices => all_user_services,
+        _ => "Back".to_string(),
     };
 
     let previous_button = widget::button::icon(icon::from_name("go-previous-symbolic"))
@@ -40,6 +41,16 @@ pub fn view_service_detail<'a>(
         .spacing(4)
         .class(widget::button::ButtonClass::Link)
         .on_press(Message::BackToList);
+
+    if service.is_none() {
+        return widget::column()
+            .push(previous_button)
+            .push(widget::text::text("Loading..."))
+            .spacing(spacing.space_m)
+            .into();
+    }
+
+    let service = service.unwrap();
 
     let sub_page_header = widget::row::with_capacity(2).push(widget::text::title3(&service.name));
 

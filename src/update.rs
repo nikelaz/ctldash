@@ -4,6 +4,7 @@ use crate::app::AppModel;
 use crate::fl;
 use crate::message::Message;
 use crate::systemd::{ServiceScope, SystemdManager};
+use crate::types::Page;
 use cosmic::prelude::*;
 
 impl AppModel {
@@ -80,6 +81,7 @@ impl AppModel {
 
             Message::SelectService(service) => {
                 self.selected_service = Some(service.clone());
+                self.current_page = Page::Details;
                 let scope = self.current_scope;
                 return Task::perform(
                     async move {
@@ -104,6 +106,10 @@ impl AppModel {
 
             Message::BackToList => {
                 self.selected_service = None;
+                match self.current_scope {
+                    ServiceScope::System => self.current_page = Page::SystemServices,
+                    ServiceScope::User => self.current_page = Page::UserServices,
+                }
             }
 
             Message::StartService(name) => {

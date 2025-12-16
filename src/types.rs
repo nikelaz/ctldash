@@ -8,6 +8,7 @@ use cosmic::widget::menu;
 pub enum Page {
     SystemServices,
     UserServices,
+    Details,
 }
 
 /// The context page to display in the context drawer.
