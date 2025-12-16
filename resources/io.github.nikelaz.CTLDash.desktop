@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=CTL Dash
-Comment=Displays services and logs and allows you to enable/disable/start/stop/restart every service.
+Comment=Displays information and allows you to manage system and user services
 Type=Application
 Icon=io.github.nikelaz.CTLDash
 Exec=ctl-dash %F
