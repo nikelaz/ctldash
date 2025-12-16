@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/ctldash/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/ctldash/icon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content="A modern systemd service manager for the COSMIC desktop environment. Manage, monitor, and control system and user services with ease." />
@@ -73,17 +73,17 @@
 		}
 		</script>
 		<style>
-			:root {
-        --cosmic-purple: #1c1d83;
-        --cosmic-purple-dark: #0c0633;
-        --cosmic-purple-light: #2f2d9e;
-				--cosmic-lavender: #d7d7ff;
-				--text-dark: #1a1a1a;
-				--text-light: #f5f5f5;
-				--bg-light: #ffffff;
-				--bg-dark: #0f0f0f;
-				--shadow: rgba(0, 0, 0, 0.1);
-			}
+      :root {
+        --cosmic-purple: #9CA6E1;
+        --cosmic-purple-dark: #1C2760;
+        --cosmic-purple-light: #CCD2FB;
+        --cosmic-lavender: #d7d7ff;
+        --text-dark: #01061E;
+        --text-light: #f5f5f5;
+        --bg-light: #ffffff;
+        --bg-dark: #0f0f0f;
+        --shadow: rgba(0, 0, 0, 0.1);
+      }
 			
 			* {
 				margin: 0;
@@ -105,13 +105,16 @@
 			}
 			
 			header {
-				background: linear-gradient(135deg, var(--cosmic-purple) 0%, var(--cosmic-purple-dark) 100%);
+        position: fixed;
+        top: 0.6rem;
+        left: 50%;
+        width: 1240px;
+        margin-left: -620px;
+        padding: 0.6rem;
+        background: var(--text-dark);	
 				color: var(--text-light);
-				padding: 1rem 0;
-				position: sticky;
-				top: 0;
+        border-radius: 10rem;
 				z-index: 100;
-				box-shadow: 0 2px 10px var(--shadow);
 			}
 			
 			nav {
@@ -124,7 +127,8 @@
 				display: flex;
 				align-items: center;
 				gap: 1rem;
-				font-size: 1.5rem;
+				font-size: 1.2rem;
+        pointer-events: none;
 				font-weight: 700;
 			}
 			
@@ -141,6 +145,7 @@
 			
 			.nav-links a {
 				color: var(--text-light);
+        font-weight: 500;
 				text-decoration: none;
 				transition: opacity 0.2s;
 			}
@@ -151,8 +156,7 @@
 			
 			.hero {
         background: linear-gradient(135deg,var(--cosmic-purple-light) 0%,var(--cosmic-purple) 100%);
-				color: var(--text-light);
-				padding: 6rem 0;
+				padding: 10rem 0 6rem;
 				text-align: center;
 			}
 			
@@ -170,6 +174,15 @@
 				margin-left: auto;
 				margin-right: auto;
 			}
+
+      .hero p a {
+        color: var(--text-dark);
+        transition: .2s opacity;
+      }
+
+      .hero p a:hover {
+        opacity: 0.8;
+      }
 			
 			.cta-buttons {
 				display: flex;
@@ -187,29 +200,34 @@
 				font-weight: 600;
 				text-decoration: none;
 				border-radius: 8px;
-				transition: all 0.3s;
+				transition: all .25s;
 				border: none;
 				cursor: pointer;
 			}
 			
 			.btn-primary {
-				background: var(--text-light);
-				color: var(--cosmic-purple);
+        background-color: #FFCE51;
+				color: var(--text-dark);
+        box-shadow: 0 5px 0 #d7aa37
 			}
 			
 			.btn-primary:hover {
-				transform: translateY(-2px);
-				box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        filter: brightness(1.05);
+        transform: translateY(2px);
+        box-shadow: 0 3px 0 #d7aa37
 			}
 			
 			.btn-secondary {
-				background: rgba(255, 255, 255, 0.1);
-				color: var(--text-light);
-				border: 2px solid var(--text-light);
+        background: #fff; 
+        filter: brightness(0.95);
+				color: var(--text-dark);
+        box-shadow: 0 5px 0 #ddd;
 			}
 			
 			.btn-secondary:hover {
-				background: rgba(255, 255, 255, 0.2);
+        filter: brightness(1);
+        transform: translateY(2px);
+        box-shadow: 0 3px 0 #ddd;
 			}
 			
 			.flathub-badge {
@@ -226,7 +244,11 @@
 				margin-bottom: 3rem;
 				text-align: center;
 			}
-			
+
+      #features {
+        background-color: #eee;
+      }
+
 			.features {
 				display: grid;
 				grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -237,7 +259,7 @@
 				padding: 2rem;
 				background: white;
 				border-radius: 12px;
-				box-shadow: 0 4px 15px var(--shadow);
+        box-shadow: 0 5px 0 #ddd;
 			}	
 			
 			.feature-icon {
@@ -248,7 +270,6 @@
 			.feature h3 {
 				font-size: 1.5rem;
 				margin-bottom: 1rem;
-				color: var(--cosmic-purple);
 			}
 			
 			.screenshots {
@@ -265,12 +286,11 @@
 				position: relative;
 				overflow: hidden;
 				border-radius: 12px;
-				box-shadow: 0 8px 30px var(--shadow);
+        box-shadow: 0 5px 0 #ddd;
 			}
 			
 			.carousel-slide {
 				display: none;
-				animation: fadeIn 0.25s;
 			}
 			
 			.carousel-slide.active {
@@ -288,7 +308,6 @@
 				background: white;
 				text-align: center;
 				font-weight: 600;
-				color: var(--cosmic-purple);
 			}
 			
 			.carousel-btn {
@@ -304,7 +323,7 @@
         padding: 6px;
 				border-radius: 50%;
 				cursor: pointer;
-				transition: all 0.3s;
+				transition: all 0.2s;
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -327,27 +346,27 @@
 			.carousel-dots {
 				display: flex;
 				justify-content: center;
-				gap: 0.5rem;
+				gap: 1rem;
 				margin-top: 1.5rem;
 			}
 			
 			.dot {
-				width: 12px;
-				height: 12px;
+				width: 10px;
+				height: 10px;
 				border-radius: 50%;
-				background: #ccc;
+        background: var(--text-dark);
+        opacity: 0.5;
 				border: none;
 				cursor: pointer;
-				transition: all 0.3s;
+				transition: all 0.2s;
 			}
 			
 			.dot.active {
-				background: var(--cosmic-purple);
-				transform: scale(1.2);
+        opacity: 1;
 			}
 			
 			.dot:hover {
-				background: var(--cosmic-purple-light);
+        opacity: 0.7;
 			}
 			
 			@keyframes fadeIn {
@@ -362,11 +381,9 @@
 			.install {
 				text-align: center;
 				background: linear-gradient(135deg, var(--cosmic-purple-light) 0%, var(--cosmic-purple) 100%);
-				color: var(--text-light);
 			}
 			
 			.install h2 {
-				color: var(--text-light);
 			}
 			
 			.install p {
@@ -375,19 +392,18 @@
 			}
 			
 			footer {
-				background: var(--cosmic-purple-dark);
-				color: var(--text-light);
 				padding: 2rem 0;
 				text-align: center;
 			}
 			
 			footer a {
-				color: var(--cosmic-lavender);
-				text-decoration: none;
+				text-decoration: underline;
+        color: var(--text-dark);
+        transition: .2s all;
 			}
 			
 			footer a:hover {
-				text-decoration: underline;
+        opacity: 0.8;
 			}
 			
 			@media (max-width: 768px) {
@@ -438,7 +454,8 @@
 		<section class="hero">
 			<div class="container">
 				<h1>Manage systemd Services with Ease</h1>
-				<p>A modern, intuitive systemd service manager built for the COSMIC desktop environment. Control, monitor, and manage all your system and user services from one beautiful interface.</p>
+<p>A modern, intuitive systemd service manager built for the <a href="https://system76.com/cosmic" target="_blank"
+          rel="noopener">COSMIC desktop environment</a>. Control, monitor, and manage all your system and user services from one beautiful interface.</p>
 				<div class="cta-buttons">
 					<a href="#install" class="btn btn-primary">
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
