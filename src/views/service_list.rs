@@ -7,6 +7,7 @@ use crate::systemd::SystemdService;
 use cosmic::iced::{Alignment, Length};
 use cosmic::widget;
 use cosmic::Element;
+use cosmic::iced::mouse::Interaction;
 
 pub fn view_services_list<'a>(
     app: &'a AppModel,
@@ -25,7 +26,7 @@ pub fn view_services_list<'a>(
     let header = widget::row()
         .push(widget::text::title3(title))
         .push(search_input)
-        .spacing(spacing.space_m)
+        .spacing(spacing.space_l)
         .align_y(Alignment::Center);
 
 
@@ -93,7 +94,9 @@ pub fn view_services_list<'a>(
             let service_clone = service.clone();
 
             list = list.add(
-                widget::mouse_area(row_content).on_press(Message::SelectService(service_clone))
+                widget::mouse_area(row_content)
+                    .interaction(Interaction::Pointer)
+                    .on_press(Message::SelectService(service_clone))
             )
         }
     }
