@@ -29,7 +29,17 @@ impl AppModel {
     pub fn update_message(&mut self, message: Message) -> Task<cosmic::Action<Message>> {
         match message {
             Message::LoadServices(scope) => {
-                self.is_loading = true;
+                // Check if services are already loaded for this scope
+                let already_loaded = match scope {
+                    ServiceScope::System => !self.system_services.is_empty(),
+                    ServiceScope::User => !self.user_services.is_empty(),
+                };
+
+                // Only show loader if services aren't already loaded
+                if !already_loaded {
+                    self.is_loading = true;
+                }
+
                 self.current_scope = scope;
                 return Task::perform(
                     async move {
@@ -57,7 +67,30 @@ impl AppModel {
 
                 match scope {
                     ServiceScope::System => {
-                        self.system_services = services;
+                        // If services were already loaded, update only changed items
+                        if !self.system_services.is_empty() {
+                            for new_service in &services {
+                                if let Some(index) = self.system_services.iter().position(|s| s.name == new_service.name) {
+                                    // Only update if the service data has changed
+                                    let existing_service = &self.system_services[index];
+                                    if existing_service.active_state != new_service.active_state
+                                        || existing_service.sub_state != new_service.sub_state
+                                        || existing_service.load_state != new_service.load_state
+                                        || existing_service.unit_file_state != new_service.unit_file_state
+                                        || existing_service.description != new_service.description {
+                                        self.system_services[index] = new_service.clone();
+                                    }
+                                } else {
+                                    // New service appeared, add it
+                                    self.system_services.push(new_service.clone());
+                                }
+                            }
+                            // Remove services that no longer exist
+                            self.system_services.retain(|s| services.iter().any(|new_s| new_s.name == s.name));
+                        } else {
+                            // First load, replace everything
+                            self.system_services = services;
+                        }
 
                         if let Some(name) = selected_service_name {
                             self.selected_service = self.system_services
@@ -67,7 +100,30 @@ impl AppModel {
                         }
                     },
                     ServiceScope::User => {
-                        self.user_services = services;
+                        // If services were already loaded, update only changed items
+                        if !self.user_services.is_empty() {
+                            for new_service in &services {
+                                if let Some(index) = self.user_services.iter().position(|s| s.name == new_service.name) {
+                                    // Only update if the service data has changed
+                                    let existing_service = &self.user_services[index];
+                                    if existing_service.active_state != new_service.active_state
+                                        || existing_service.sub_state != new_service.sub_state
+                                        || existing_service.load_state != new_service.load_state
+                                        || existing_service.unit_file_state != new_service.unit_file_state
+                                        || existing_service.description != new_service.description {
+                                        self.user_services[index] = new_service.clone();
+                                    }
+                                } else {
+                                    // New service appeared, add it
+                                    self.user_services.push(new_service.clone());
+                                }
+                            }
+                            // Remove services that no longer exist
+                            self.user_services.retain(|s| services.iter().any(|new_s| new_s.name == s.name));
+                        } else {
+                            // First load, replace everything
+                            self.user_services = services;
+                        }
 
                         if let Some(name) = selected_service_name {
                             self.selected_service = self.user_services
