@@ -94,7 +94,7 @@ impl cosmic::Application for AppModel {
         // Create a startup command that sets the window title and loads services.
         let title_command = app.update_title();
         let load_command = Task::perform(async {}, |_| {
-            cosmic::Action::from(Message::LoadServices(ServiceScope::System))
+            cosmic::Action::from(Message::LoadServices(Some(ServiceScope::System)))
         });
 
         (app, Task::batch(vec![title_command, load_command]))
@@ -163,12 +163,8 @@ impl cosmic::Application for AppModel {
 
     /// Register subscriptions for this application.
     fn subscription(&self) -> Subscription<Self::Message> {
-        if self.selected_service.is_some() {
-            cosmic::iced::time::every(std::time::Duration::from_secs(1))
-                .map(|_| Message::Tick)
-        } else {
-            Subscription::none()
-        }
+        cosmic::iced::time::every(std::time::Duration::from_secs(1))
+            .map(|_| Message::Tick)
     }
 
     /// Handles messages emitted by the application and its widgets.
@@ -193,7 +189,7 @@ impl cosmic::Application for AppModel {
 
         let title_command = self.update_title();
         let load_command = Task::perform(async {}, move |_| {
-            cosmic::Action::from(Message::LoadServices(scope))
+            cosmic::Action::from(Message::LoadServices(Some(scope)))
         });
 
         Task::batch(vec![title_command, load_command])

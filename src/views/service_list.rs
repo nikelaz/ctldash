@@ -16,7 +16,6 @@ pub fn view_services_list<'a>(
     let spacing = cosmic::theme::spacing();
     
     // Localized strings
-    let refresh_text = fl!("refresh");
     let search_placeholder = fl!("search-placeholder");
 
     let search_input = widget::text_input(search_placeholder, &app.search_filter)
@@ -25,10 +24,6 @@ pub fn view_services_list<'a>(
 
     let header = widget::row()
         .push(widget::text::title3(title))
-        .push(
-            widget::button::standard(refresh_text)
-                .on_press(Message::RefreshServices)
-        )
         .push(search_input)
         .spacing(spacing.space_m)
         .align_y(Alignment::Center);

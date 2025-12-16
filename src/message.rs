@@ -8,7 +8,7 @@ use crate::types::ContextPage;
 pub enum Message {
     LaunchUrl(String),
     ToggleContextPage(ContextPage),
-    LoadServices(ServiceScope),
+    LoadServices(Option<ServiceScope>),
     ServicesLoaded(ServiceScope, Vec<SystemdService>),
     SelectService(SystemdService),
     BackToList,
@@ -18,7 +18,6 @@ pub enum Message {
     EnableService(String),
     DisableService(String),
     ServiceActionComplete,
-    RefreshServices,
     LogsLoaded(String),
     RefreshCurrentService,
     CurrentServiceRefreshed(Option<SystemdService>, String),

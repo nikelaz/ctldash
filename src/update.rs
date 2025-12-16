@@ -29,6 +29,14 @@ impl AppModel {
     pub fn update_message(&mut self, message: Message) -> Task<cosmic::Action<Message>> {
         match message {
             Message::LoadServices(scope) => {
+                let mut scope = scope;
+
+                if scope.is_none() {
+                    scope = Some(self.current_scope);
+                }
+
+                let scope = scope.unwrap();
+
                 // Check if services are already loaded for this scope
                 let already_loaded = match scope {
                     ServiceScope::System => !self.system_services.is_empty(),
@@ -240,10 +248,10 @@ impl AppModel {
                 );
             }
 
-            Message::ServiceActionComplete | Message::RefreshServices => {
+            Message::ServiceActionComplete => {
                 let scope = self.current_scope;
                 return Task::perform(async {}, move |_| {
-                    cosmic::Action::from(Message::LoadServices(scope))
+                    cosmic::Action::from(Message::LoadServices(Some(scope)))
                 });
             }
 
@@ -253,6 +261,10 @@ impl AppModel {
                         cosmic::Action::from(Message::RefreshCurrentService)
                     });
                 }
+
+                return Task::perform(async {}, |_| {
+                    cosmic::Action::from(Message::LoadServices(None))
+                });
             }
 
             Message::RefreshCurrentService => {
