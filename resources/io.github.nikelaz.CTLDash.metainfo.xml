@@ -44,7 +44,6 @@
   </releases>
   <launchable type="desktop-id">io.github.nikelaz.CTLDash.desktop</launchable>
   <provides>
-    <id>io.github.nikelaz.CTLDash</id>
     <binaries>
       <binary>ctl-dash</binary>
     </binaries>
