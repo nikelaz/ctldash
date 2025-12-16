@@ -36,6 +36,20 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.1.0" date="2025-12-16">
+      <description>
+        <p>Updates:</p>
+        <ul>
+          <li>Refresh in the services list is no longer manual</li>
+          <li>Loader in the services list will only show when opening the app</li>
+          <li>Added cursor interaction indicator (hover) to the list rows</li>
+        </ul>
+        <p>Fixes:</p>
+        <ul>
+          <li>Fixed issue with back button navigation</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2025-12-13">
       <description>
         <p>Initial release</p>
