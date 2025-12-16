@@ -25,6 +25,10 @@
   <url type="homepage">https://nikelaz.github.io/ctldash</url>
   <url type="bugtracker">https://github.com/nikelaz/ctldash/issues</url>
   <url type="vcs-browser">https://github.com/nikelaz/ctl-dash</url>
+  <branding>
+    <color type="primary" scheme_preference="light">#9CA6E1</color>
+    <color type="primary" scheme_preference="dark">#1C2760</color>
+  </branding>
   <screenshots>
     <screenshot type="default">
       <caption>Services List</caption>
