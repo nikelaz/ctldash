@@ -1,4 +1,4 @@
-<img src="https://github.com/user-attachments/assets/17712760-2f94-4302-9a08-8910d5fd3541" alt="ctl dash icon" width="120" height="88" />
+<img src="https://github.com/user-attachments/assets/17712760-2f94-4302-9a08-8910d5fd3541" alt="ctl dash icon" width="120" />
 
 # CTL Dash
 
