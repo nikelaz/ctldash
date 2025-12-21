@@ -46,31 +46,18 @@ impl SystemdManager {
         )
         .await?;
 
-        // Use ListUnitFiles to get all service files, not just loaded units
-        let unit_files: Vec<(String, String)> = proxy.call("ListUnitFiles", &()).await?;
+        let units: Vec<(String, String, String, String, String, String, zbus::zvariant::OwnedObjectPath, u32, String, zbus::zvariant::OwnedObjectPath)> = 
+            proxy.call("ListUnits", &()).await?;
 
         let mut services: Vec<SystemdService> = Vec::new();
         
-        for (unit_path, unit_file_state) in unit_files {
-            // Extract service name from path
-            let name = std::path::Path::new(&unit_path)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("")
-                .to_string();
-            
+        for (name, description, load_state, active_state, sub_state, _following, unit_object_path, _job_id, _job_type, _job_object_path) in units {
             if !name.ends_with(".service") {
                 continue;
             }
 
-            let (description, load_state, active_state, sub_state) = 
-                self.get_unit_properties(&name).await
-                    .unwrap_or_else(|_| (
-                        String::new(),
-                        "not-loaded".to_string(),
-                        "inactive".to_string(),
-                        "dead".to_string()
-                    ));
+            let unit_file_state = self.get_unit_file_state(&unit_object_path).await
+                .unwrap_or_else(|_| "unknown".to_string());
             
             services.push(SystemdService {
                 name,
@@ -78,7 +65,7 @@ impl SystemdManager {
                 load_state,
                 active_state,
                 sub_state,
-                unit_path,
+                unit_path: unit_object_path.to_string(),
                 unit_file_state,
             });
         }
@@ -86,49 +73,23 @@ impl SystemdManager {
         Ok(services)
     }
 
-    async fn get_unit_properties(&self, service_name: &str) -> Result<(String, String, String, String)> {
-        let proxy = zbus::Proxy::new(
-            &self.connection,
-            "org.freedesktop.systemd1",
-            "/org/freedesktop/systemd1",
-            "org.freedesktop.systemd1.Manager",
-        )
-        .await?;
 
-        // Try to load the unit to get its properties
-        let unit_path: zbus::zvariant::OwnedObjectPath = proxy
-            .call("LoadUnit", &(service_name,))
-            .await?;
 
+    async fn get_unit_file_state(&self, unit_object_path: &zbus::zvariant::OwnedObjectPath) -> Result<String> {
         let unit_proxy = zbus::Proxy::new(
             &self.connection,
             "org.freedesktop.systemd1",
-            unit_path.as_str(),
+            unit_object_path.as_str(),
             "org.freedesktop.systemd1.Unit",
         )
         .await?;
 
-        let description: String = unit_proxy
-            .get_property("Description")
-            .await
-            .unwrap_or_default();
-        
-        let load_state: String = unit_proxy
-            .get_property("LoadState")
+        let unit_file_state: String = unit_proxy
+            .get_property("UnitFileState")
             .await
             .unwrap_or_else(|_| "unknown".to_string());
-        
-        let active_state: String = unit_proxy
-            .get_property("ActiveState")
-            .await
-            .unwrap_or_else(|_| "inactive".to_string());
-        
-        let sub_state: String = unit_proxy
-            .get_property("SubState")
-            .await
-            .unwrap_or_else(|_| "dead".to_string());
 
-        Ok((description, load_state, active_state, sub_state))
+        Ok(unit_file_state)
     }
 
     pub async fn start_service(&self, service_name: &str) -> Result<()> {
