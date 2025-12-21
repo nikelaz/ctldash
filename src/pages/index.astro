@@ -108,13 +108,14 @@
         position: fixed;
         top: 0.6rem;
         left: 50%;
-        width: 1240px;
-        margin-left: -620px;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: 1240px;
         padding: 0.6rem;
-        background: var(--text-dark);	
-				color: var(--text-light);
+        background: var(--text-dark);
+        color: var(--text-light);
         border-radius: 10rem;
-				z-index: 100;
+        z-index: 100;
 			}
 			
 			nav {
