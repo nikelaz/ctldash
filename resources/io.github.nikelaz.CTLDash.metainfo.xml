@@ -24,7 +24,7 @@
   </developer>
   <url type="homepage">https://nikelaz.github.io/ctldash</url>
   <url type="bugtracker">https://github.com/nikelaz/ctldash/issues</url>
-  <url type="vcs-browser">https://github.com/nikelaz/ctl-dash</url>
+  <url type="vcs-browser">https://github.com/nikelaz/ctldash</url>
   <branding>
     <color type="primary" scheme_preference="light">#9CA6E1</color>
     <color type="primary" scheme_preference="dark">#1C2760</color>
@@ -40,6 +40,14 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="1.1.1" date="2025-12-21">
+      <description>
+        <p>Fixes:</p>
+        <ul>
+          <li>System services were not loading on distros that use SELinux</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.0" date="2025-12-16">
       <description>
         <p>Updates:</p>
