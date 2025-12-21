@@ -16,7 +16,8 @@
     "--device=dri",
     "--talk-name=org.freedesktop.Flatpak",
     "--talk-name=org.freedesktop.systemd1",
-    "--system-talk-name=org.freedesktop.systemd1"
+    "--system-talk-name=org.freedesktop.systemd1",
+    "--filesystem=xdg-config/cosmic:ro"
   ],
   "build-options": {
     "append-path": "/usr/lib/sdk/rust-stable/bin",
