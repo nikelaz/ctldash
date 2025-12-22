@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
+//
+// Reference for systemd dbus interface: 
+// https://www.freedesktop.org/wiki/Software/systemd/dbus 
 
 use zbus::{Connection, Result};
 
@@ -46,8 +49,18 @@ impl SystemdManager {
         )
         .await?;
 
-        let units: Vec<(String, String, String, String, String, String, zbus::zvariant::OwnedObjectPath, u32, String, zbus::zvariant::OwnedObjectPath)> = 
-            proxy.call("ListUnits", &()).await?;
+        let units: Vec<(
+            String, // The primary unit name as string
+            String, // The human readable description string
+            String, // The load state (i.e. whether the unit file has been loaded successfully)
+            String, // The active state (i.e. whether the unit is currently started or not)
+            String, // The sub state (a more fine-grained version of the active state that is specific to the unit type, which the active state is not)
+            String, // A unit that is being followed in its state by this unit, if there is any, otherwise the empty string.
+            zbus::zvariant::OwnedObjectPath, // The unit object path
+            u32, // If there is a job queued for the job unit the numeric job id, 0 otherwise
+            String, // The job type as string 
+            zbus::zvariant::OwnedObjectPath // The job object path
+        )> = proxy.call("ListUnits", &()).await?;
 
         let mut services: Vec<SystemdService> = Vec::new();
         
@@ -72,8 +85,6 @@ impl SystemdManager {
 
         Ok(services)
     }
-
-
 
     async fn get_unit_file_state(&self, unit_object_path: &zbus::zvariant::OwnedObjectPath) -> Result<String> {
         let unit_proxy = zbus::Proxy::new(
