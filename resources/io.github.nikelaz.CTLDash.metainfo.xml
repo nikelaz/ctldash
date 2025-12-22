@@ -13,29 +13,24 @@
     <p>
       CTL Dash is a systemd service manager for the COSMIC desktop environment that displays system and user services with their status.
     </p>
-    <p>Features:</p>
-    <ul>
-      <li>View all systemd services with their current status</li>
-      <li>Manage both system-wide and user services</li>
-      <li>View detailed information about individual services</li>
-      <li>Start, stop, restart services from the UI</li>
-      <li>Enable and disable services</li>
-      <li>View service logs</li>
-    </ul>
-  </description>
-
-  <description xml:lang="bg">
-    <p>
+    <p xml:lang="bg">
       CTL Dash е мениджър на systemd услуги за десктоп средата COSMIC, който показва системни и потребителски услуги заедно с тяхното състояние.
     </p>
-    <p>Функционалности:</p>
+    <p>Features:</p>
+    <p xml:lang="bg">Функционалности:</p>
     <ul>
-      <li>Преглед на всички systemd услуги с текущото им състояние</li>
-      <li>Управление на системни и потребителски услуги</li>
-      <li>Подробна информация за всяка услуга</li>
-      <li>Стартиране, спиране и рестартиране на услуги от интерфейса</li>
-      <li>Активиране и деактивиране на услуги</li>
-      <li>Преглед на логовете на услугите</li>
+      <li>View all systemd services with their current status</li>
+      <li xml:lang="bg">Преглед на всички systemd услуги с текущото им състояние</li>
+      <li>Manage both system-wide and user services</li>
+      <li xml:lang="bg">Управление на системни и потребителски услуги</li>
+      <li>View detailed information about individual services</li>
+      <li xml:lang="bg">Подробна информация за всяка услуга</li>
+      <li>Start, stop, restart services from the UI</li>
+      <li xml:lang="bg">Стартиране, спиране и рестартиране на услуги от интерфейса</li>
+      <li>Enable and disable services</li>
+      <li xml:lang="bg">Активиране и деактивиране на услуги</li>
+      <li>View service logs</li>
+      <li xml:lang="bg">Преглед на логовете на услугите</li>
     </ul>
   </description>
 
