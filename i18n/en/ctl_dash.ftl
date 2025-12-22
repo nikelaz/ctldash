@@ -9,7 +9,6 @@ system-services = System Services
 user-services = User Services
 
 # Service List
-refresh = Refresh
 search-placeholder = Search services...
 service = Service
 description = Description
