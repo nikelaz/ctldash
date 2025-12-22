@@ -8,7 +8,7 @@ A systemd service manager for the COSMIC desktop environment that displays syste
 
 | Services List | Service Details |
 |-|-|
-| <img width="1333" height="783" alt="Screenshot_2025-12-14_00-15-05" src="https://github.com/user-attachments/assets/7c70f68b-9cf0-42e8-99fb-16c1ddfd9a9e" /> | <img width="1333" height="783" alt="Screenshot_2025-12-14_00-15-54" src="https://github.com/user-attachments/assets/70ded06c-9c2d-44cb-8ac8-5f586477b566" /> |
+| <img width="1333" height="783" alt="services list ui" src="https://nikelaz.github.io/ctldash/screenshot-services.png" /> | <img width="1333" height="783" alt="service details ui" src="https://nikelaz.github.io/ctldash/screenshot-details.png" /> |
 
 ## Features
 
