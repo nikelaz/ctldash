@@ -3,8 +3,12 @@
   <id>io.github.nikelaz.CTLDash</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MPL-2.0</project_license>
+
   <name>CTL Dash</name>
+
   <summary>Manage services</summary>
+  <summary xml:lang="bg">Управление на услуги</summary>
+
   <description>
     <p>
       CTL Dash is a systemd service manager for the COSMIC desktop environment that displays system and user services with their status.
@@ -19,23 +23,44 @@
       <li>View service logs</li>
     </ul>
   </description>
+
+  <description xml:lang="bg">
+    <p>
+      CTL Dash е мениджър на systemd услуги за десктоп средата COSMIC, който показва системни и потребителски услуги заедно с тяхното състояние.
+    </p>
+    <p>Функционалности:</p>
+    <ul>
+      <li>Преглед на всички systemd услуги с текущото им състояние</li>
+      <li>Управление на системни и потребителски услуги</li>
+      <li>Подробна информация за всяка услуга</li>
+      <li>Стартиране, спиране и рестартиране на услуги от интерфейса</li>
+      <li>Активиране и деактивиране на услуги</li>
+      <li>Преглед на логовете на услугите</li>
+    </ul>
+  </description>
+
   <developer id="io.github.nikelaz">
     <name>Nikola Lazarov</name>
   </developer>
+
   <url type="homepage">https://nikelaz.github.io/ctldash</url>
   <url type="bugtracker">https://github.com/nikelaz/ctldash/issues</url>
   <url type="vcs-browser">https://github.com/nikelaz/ctldash</url>
+
   <branding>
     <color type="primary" scheme_preference="light">#9CA6E1</color>
     <color type="primary" scheme_preference="dark">#1C2760</color>
   </branding>
+
   <screenshots>
     <screenshot type="default">
       <caption>Services List</caption>
+      <caption xml:lang="bg">Списък с услуги</caption>
       <image>https://nikelaz.github.io/ctldash/screenshot-services.png</image>
     </screenshot>
     <screenshot>
       <caption>Service Details</caption>
+      <caption xml:lang="bg">Детайли за услуга</caption>
       <image>https://nikelaz.github.io/ctldash/screenshot-details.png</image>
     </screenshot>
   </screenshots>
