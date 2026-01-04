@@ -40,7 +40,6 @@
         );
       }
 
-      /* ✅ FIXED HEADER */
      header {
   position: fixed;
   top: 0.6rem;
@@ -48,8 +47,8 @@
   transform: translateX(-50%);
   width: calc(100% - 40px);
   max-width: 1240px;
-  height: 72px; /* ✅ FIXED HEIGHT */
-  padding: 0 2rem; /* ❌ remove vertical padding */
+  height: 72px; 
+  padding: 0 2rem; 
   background: var(--text-dark);
   color: var(--text-light);
   border-radius: 999px;
@@ -61,7 +60,7 @@
 .header-inner {
   width: 100%;
   display: flex;
-  align-items: center; /* ✅ vertical centering */
+  align-items: center; 
   justify-content: space-between;
 }
 
@@ -71,7 +70,6 @@
         font-weight: 600;
       }
 
-      /* ✅ PAGE CONTENT CONTAINER */
       .container {
         max-width: 900px;
         margin: 0 auto;
@@ -89,7 +87,7 @@
 }
 
 .brand img {
-  width: 40px;  /* ✅ constrained */
+  width: 40px;  
   height: 40px;
   border-radius: 10px;
 }
