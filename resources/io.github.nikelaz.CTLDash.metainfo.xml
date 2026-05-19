@@ -8,6 +8,7 @@
 
   <summary>Manage services</summary>
   <summary xml:lang="bg">Управление на услуги</summary>
+  <summary xml:lang="cs">Správa služeb</summary>
 
   <description>
     <p>
@@ -16,21 +17,31 @@
     <p xml:lang="bg">
       CTL Dash е мениджър на systemd услуги за десктоп средата COSMIC, който показва системни и потребителски услуги заедно с тяхното състояние.
     </p>
+    <p xml:lang="cs">
+      CTL Dash je správce služeb systemd pro prostředí COSMIC, který zobrazuje systémové a uživatelské služby spolu s jejich stavem.
+    </p>
     <p>Features:</p>
     <p xml:lang="bg">Функционалности:</p>
+    <p xml:lang="cs">Funkce:</p>
     <ul>
       <li>View all systemd services with their current status</li>
       <li xml:lang="bg">Преглед на всички systemd услуги с текущото им състояние</li>
+      <li xml:lang="cs">Zobrazení všech služeb systemd a jejich aktuálního stavu</li>
       <li>Manage both system-wide and user services</li>
       <li xml:lang="bg">Управление на системни и потребителски услуги</li>
+      <li xml:lang="cs">Správa systémových i uživatelských služeb</li>
       <li>View detailed information about individual services</li>
       <li xml:lang="bg">Подробна информация за всяка услуга</li>
+      <li xml:lang="cs">Zobrazení podrobných informací o jednotlivých službách</li>
       <li>Start, stop, restart services from the UI</li>
       <li xml:lang="bg">Стартиране, спиране и рестартиране на услуги от интерфейса</li>
+      <li xml:lang="cs">Spouštění, zastavování a restartování služeb z uživatelského rozhraní</li>
       <li>Enable and disable services</li>
       <li xml:lang="bg">Активиране и деактивиране на услуги</li>
+      <li xml:lang="cs">Povolování a zakazování služeb</li>
       <li>View service logs</li>
       <li xml:lang="bg">Преглед на логовете на услугите</li>
+      <li xml:lang="cs">Zobrazení záznamů služeb</li>
     </ul>
   </description>
 
@@ -51,11 +62,13 @@
     <screenshot type="default">
       <caption>Services List</caption>
       <caption xml:lang="bg">Списък с услуги</caption>
+      <caption xml:lang="cs">Seznam služeb</caption>
       <image>https://nikelaz.github.io/ctldash/screenshot-services.png</image>
     </screenshot>
     <screenshot>
       <caption>Service Details</caption>
       <caption xml:lang="bg">Детайли за услуга</caption>
+      <caption xml:lang="cs">Podrobnosti služeb</caption>
       <image>https://nikelaz.github.io/ctldash/screenshot-details.png</image>
     </screenshot>
   </screenshots>
