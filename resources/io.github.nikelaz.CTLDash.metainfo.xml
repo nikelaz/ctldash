@@ -115,6 +115,7 @@
   </releases>
   <launchable type="desktop-id">io.github.nikelaz.CTLDash.desktop</launchable>
   <provides>
+    <id>com.system76.CosmicApplication</id>
     <binaries>
       <binary>ctl-dash</binary>
     </binaries>
