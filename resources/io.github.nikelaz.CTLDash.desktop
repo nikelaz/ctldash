@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=CTL Dash
 Comment=Displays information and allows you to manage system and user services
+Comment[cs]=Zobrazuje informace a umožňuje spravovat systémové a uživatelské služby
 Type=Application
 Icon=io.github.nikelaz.CTLDash
 Exec=ctl-dash %F
@@ -8,4 +9,5 @@ Terminal=false
 StartupNotify=true
 Categories=System;Monitor;X-COSMIC;
 Keywords=systemd;services;systemctl;COSMIC;
+Keywords[cs]=systemd;služby;systemctl;COSMIC;
 MimeType=
