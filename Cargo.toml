@@ -7,20 +7,30 @@ description = "Displays services and logs and allows you to enable/disable/start
 repository = "https://github.com/nikelaz/ctl-dash"
 
 [dependencies]
-futures-util = "0.3.31"
-i18n-embed = { version = "0.16", features = [
+futures-util = "0.3.34"
+i18n-embed = {
+  version = "0.16.0",
+  features = [
     "fluent-system",
     "desktop-requester",
-] }
-i18n-embed-fl = "0.10"
-open = "5.3.3"
-rust-embed = "8.9.0"
-tokio = { version = "1.48.0", features = ["full"] }
-zbus = { version = "5", default-features = false, features = ["tokio"] }
+  ]
+}
+i18n-embed-fl = "0.10.1"
+open = "5.4.2"
+rust-embed = "8.12.0"
+tokio = {
+  version = "1.53.1",
+  features = ["full"]
+}
+zbus = {
+  version = "5.19",
+  default-features = false,
+  features = ["tokio"]
+}
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic.git"
-rev = "aabc8dcda530a6ac70617dd578cea55910af53c8"
+rev = "c003a58fff660f5c55ebfb54a5908722fa7d1d6e"
 features = [
     "a11y",
     "about",

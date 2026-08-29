@@ -43,7 +43,7 @@ pub fn view_service_detail<'a>(
         .on_press(Message::BackToList);
 
     if service.is_none() {
-        return widget::column()
+        return widget::column::with_capacity(2)
             .push(previous_button)
             .push(widget::text::text("Loading..."))
             .spacing(spacing.space_m)
@@ -60,12 +60,12 @@ pub fn view_service_detail<'a>(
         .spacing(6)
         .width(Length::Shrink);
 
-    let description = widget::row()
+    let description = widget::row::with_capacity(2)
         .push(widget::text(description_label).width(Length::Fixed(120.0)))
         .push(widget::text(&service.description))
         .spacing(spacing.space_s);
 
-    let load_state = widget::row()
+    let load_state = widget::row::with_capacity(2)
         .push(widget::text(load_state_label).width(Length::Fixed(120.0)))
         .push(widget::text(&service.load_state))
         .spacing(spacing.space_s);
@@ -87,24 +87,24 @@ pub fn view_service_detail<'a>(
         widget::toggler(is_enabled)
     };
     
-    let enabled = widget::row()
+    let enabled = widget::row::with_capacity(3)
         .push(widget::text(enabled_label).width(Length::Fixed(120.0)))
         .push(enabled_toggler)
         .push(widget::text(format!("({})", service.unit_file_state)).size(12))
         .align_y(Alignment::Center)
         .spacing(spacing.space_s);
 
-    let status = widget::row()
+    let status = widget::row::with_capacity(2)
         .push(widget::text(status_label).width(Length::Fixed(120.0)))
         .push(widget::text(&service.sub_state))
         .spacing(spacing.space_s);
 
-    let unit_path = widget::row()
+    let unit_path = widget::row::with_capacity(2)
         .push(widget::text(unit_path_label).width(Length::Fixed(120.0)))
         .push(widget::text(&service.unit_path))
         .spacing(spacing.space_s);
 
-    let info_section = widget::column()
+    let info_section = widget::column::with_capacity(5)
         .push(description)
         .push(enabled)
         .push(status)
@@ -119,13 +119,13 @@ pub fn view_service_detail<'a>(
     let controls;
 
     if service.sub_state == "running" {
-        controls = widget::row()
+        controls = widget::row::with_capacity(2)
             .push(widget::button::standard(stop_text.clone()).on_press(Message::StopService(service_name2)))
             .push(widget::button::standard(restart_text.clone()).on_press(Message::RestartService(service_name3)))
             .spacing(spacing.space_s);
     }
     else {
-        controls = widget::row()
+        controls = widget::row::with_capacity(2)
             .push(widget::button::standard(start_text).on_press(Message::StartService(service_name)))
             .push(widget::button::standard(restart_text).on_press(Message::RestartService(service_name3)))
             .spacing(spacing.space_s);
@@ -140,7 +140,7 @@ pub fn view_service_detail<'a>(
         .width(Length::Fill)
         .height(Length::Fill);
 
-    widget::column()
+    widget::column::with_capacity(5)
         .push(header)
         .push(info_section)
         .push(controls)

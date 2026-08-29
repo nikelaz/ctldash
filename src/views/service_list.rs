@@ -23,7 +23,7 @@ pub fn view_services_list<'a>(
         .on_input(Message::SearchFilterChanged)
         .width(Length::Fill);
 
-    let header = widget::row()
+    let header = widget::row::with_capacity(2)
         .push(widget::text::title3(title))
         .push(search_input)
         .spacing(spacing.space_l)
@@ -52,14 +52,14 @@ pub fn view_services_list<'a>(
     let no_services_text = fl!("no-services-found");
     let no_match_text = fl!("no-services-match");
 
-    let list_header = widget::row()
+    let list_header = widget::row::with_capacity(4)
         .push(widget::text(service_text).width(Length::FillPortion(3)))
         .push(widget::text(description_text).width(Length::FillPortion(3)))
         .push(widget::text(active_state_text).width(Length::FillPortion(1)))
         .push(widget::text(sub_state_text).width(Length::FillPortion(1)))
         .padding(cosmic::iced::Padding::from([0, spacing.space_m]));
 
-    let mut list = widget::list_column().spacing(spacing.space_xs);
+    let mut list = widget::list_column();
 
     if app.is_loading {
         list = list.add(widget::text(loading_text));
@@ -71,7 +71,7 @@ pub fn view_services_list<'a>(
         }
     } else {
         for service in filtered_services {
-            let row_content = widget::row()
+            let row_content = widget::row::with_capacity(4)
                 .push(
                     widget::text(&service.name)
                         .width(Length::FillPortion(3))
@@ -104,12 +104,12 @@ pub fn view_services_list<'a>(
     let scrollable = widget::scrollable(list)
         .height(Length::Fill);
 
-    let services_table = widget::column()
+    let services_table = widget::column::with_capacity(2)
         .push(list_header)
         .push(scrollable)
         .spacing(spacing.space_xs);
 
-    widget::column()
+    widget::column::with_capacity(2)
         .push(header)
         .push(services_table)
         .spacing(spacing.space_m)
