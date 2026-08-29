@@ -25,4 +25,6 @@ pub enum Message {
     SearchFilterChanged(String),
     ToggleSearch(bool),
     SortServices(SortColumn),
+    CopyLogs,
+    LogsEditorAction(cosmic::widget::text_editor::Action),
 }

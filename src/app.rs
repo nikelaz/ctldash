@@ -10,6 +10,10 @@ use cosmic::iced::{Length, Subscription};
 use cosmic::widget::{self, about::About, icon, menu, nav_bar};
 use cosmic::prelude::*;
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
+
+/// How long the "Copied" state on the logs copy button is shown.
+pub(crate) const LOGS_COPIED_INDICATOR_DURATION: Duration = Duration::from_secs(3);
 
 const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 const APP_ICON: &[u8] = include_bytes!("../resources/icons/hicolor/scalable/apps/icon.svg");
@@ -26,10 +30,14 @@ pub struct AppModel {
     pub(crate) current_scope: ServiceScope,
     pub current_page: Page,
     pub service_logs: String,
+    /// Editor state for the logs view; provides multi-line text selection.
+    pub logs_editor: cosmic::widget::text_editor::Content<cosmic::Renderer>,
     pub is_loading: bool,
     pub search_filter: String,
     pub sort_column: SortColumn,
     pub sort_direction: SortDirection,
+    /// When the logs were last copied, used to show the "Copied" state.
+    pub logs_copied_at: Option<Instant>,
     pub(crate) search_expanded: bool,
     pub(crate) search_id: cosmic::widget::Id,
 }
@@ -91,10 +99,12 @@ impl cosmic::Application for AppModel {
             current_scope: ServiceScope::System,
             current_page: Page::SystemServices,
             service_logs: "".to_string(),
+            logs_editor: cosmic::widget::text_editor::Content::new(),
             is_loading: false,
             search_filter: String::new(),
             sort_column: SortColumn::Name,
             sort_direction: SortDirection::Ascending,
+            logs_copied_at: None,
             search_expanded: false,
             search_id: cosmic::widget::Id::unique(),
         };

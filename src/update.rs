@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::app::AppModel;
+use crate::app::{AppModel, LOGS_COPIED_INDICATOR_DURATION};
 use crate::fl;
 use crate::message::Message;
 use crate::systemd::{ServiceScope, SystemdManager};
 use crate::types::{Page, SortDirection};
 use cosmic::prelude::*;
+use std::time::Instant;
 
 impl AppModel {
     pub fn update_title(&mut self) -> Task<cosmic::Action<Message>> {
@@ -166,6 +167,15 @@ impl AppModel {
 
             Message::LogsLoaded(logs) => {
                 self.service_logs = logs;
+                self.sync_logs_editor();
+            }
+
+            Message::LogsEditorAction(action) => {
+                // The logs editor is read-only: ignore editing actions, but
+                // still allow selection, scrolling, and copy key binds.
+                if !action.is_edit() {
+                    self.logs_editor.perform(action);
+                }
             }
 
             Message::BackToList => {
@@ -255,7 +265,20 @@ impl AppModel {
                 });
             }
 
+            Message::CopyLogs => {
+                self.logs_copied_at = Some(Instant::now());
+                return cosmic::iced::clipboard::write(self.service_logs.clone());
+            }
+
             Message::Tick => {
+                // Expire the "Copied" indicator on the logs copy button.
+                if self
+                    .logs_copied_at
+                    .is_some_and(|at| at.elapsed() >= LOGS_COPIED_INDICATOR_DURATION)
+                {
+                    self.logs_copied_at = None;
+                }
+
                 if self.selected_service.is_some() {
                     return Task::perform(async {}, |_| {
                         cosmic::Action::from(Message::RefreshCurrentService)
@@ -298,6 +321,10 @@ impl AppModel {
                 if let Some(updated_service) = service {
                     self.selected_service = Some(updated_service.clone());
                     self.service_logs = logs;
+                    // Only rebuild the editor content when the logs actually
+                    // changed, otherwise auto-refresh would reset the user's
+                    // text selection every tick.
+                    self.sync_logs_editor();
 
                     match self.current_scope {
                         ServiceScope::System => {
@@ -355,5 +382,26 @@ impl AppModel {
             },
         }
         Task::none()
+    }
+
+    /// Rebuilds the logs editor content when the logs changed, and auto-scrolls
+    /// it to the bottom (the default position for freshly loaded logs).
+    fn sync_logs_editor(&mut self) {
+        if self.logs_editor.text() == self.service_logs {
+            return;
+        }
+
+        self.logs_editor =
+            cosmic::widget::text_editor::Content::with_text(&self.service_logs);
+
+        // Scroll to the bottom. At this point the buffer has not been laid
+        // out yet, so its metrics are still the placeholder 1px line height
+        // and the real document height is unknown. Requesting far more lines
+        // than any log can occupy is safe: the editor clamps the scroll to
+        // the end of the document on the next layout pass.
+        self.logs_editor
+            .perform(cosmic::widget::text_editor::Action::Scroll {
+                lines: 100_000_000,
+            });
     }
 }

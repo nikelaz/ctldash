@@ -27,6 +27,7 @@ pub fn view_service_detail<'a>(
     let stop_text = fl!("stop");
     let restart_text = fl!("restart");
     let logs_text = fl!("logs");
+    let copied_text = fl!("copied");
 
     let previous_button_label = match app.nav.active_data::<Page>().unwrap() {
         Page::SystemServices => all_system_services,
@@ -130,13 +131,54 @@ pub fn view_service_detail<'a>(
             .spacing(spacing.space_s);
     }
 
-    let logs = widget::container(widget::text(&app.service_logs).size(12))
+    // The text editor supports multi-line selection and a right-click
+    // context menu; it is made read-only by ignoring edit actions.
+    // It is styled transparent so the surrounding Card provides the look.
+    let logs = widget::container(
+        widget::text_editor::TextEditor::new(&app.logs_editor)
+            .height(Length::Fill)
+            .size(12)
+            .font(cosmic::font::mono())
+            .padding(spacing.space_s)
+            .on_action(Message::LogsEditorAction)
+            .style(|theme, _status| {
+                use cosmic::cosmic_theme::palette::WithAlpha;
+                let cosmic = theme.cosmic();
+                widget::text_editor::Style {
+                    background: cosmic::iced::Color::TRANSPARENT.into(),
+                    border: cosmic::iced::Border {
+                        radius: 0.0.into(),
+                        width: 0.0,
+                        color: cosmic::iced::Color::TRANSPARENT,
+                    },
+                    placeholder: cosmic.palette.neutral_9.with_alpha(0.7).into(),
+                    value: cosmic.palette.neutral_9.into(),
+                    selection: cosmic.accent.base.into(),
+                }
+            }),
+    )
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .class(cosmic::theme::Container::Card);
+
+    let copy_button: Element<'_, Message> = if app.logs_copied_at.is_some() {
+        widget::button::suggested(copied_text).into()
+    } else {
+        widget::button::icon(icon::from_name("edit-copy-symbolic"))
+            .on_press(Message::CopyLogs)
+            .into()
+    };
+
+    let copy_button_layer = widget::container(copy_button)
         .width(Length::Fill)
         .height(Length::Fill)
-        .padding(spacing.space_s)
-        .class(cosmic::theme::Container::Card);
+        .align_x(cosmic::iced::alignment::Horizontal::Right)
+        .align_y(cosmic::iced::alignment::Vertical::Top)
+        .padding(spacing.space_s);
 
-    let scrollable_logs = widget::scrollable(logs)
+    let logs_with_copy = cosmic::iced::widget::Stack::with_capacity(2)
+        .push(logs)
+        .push(copy_button_layer)
         .width(Length::Fill)
         .height(Length::Fill);
 
@@ -145,7 +187,7 @@ pub fn view_service_detail<'a>(
         .push(info_section)
         .push(controls)
         .push(widget::text::title4(logs_text))
-        .push(scrollable_logs)
+        .push(logs_with_copy)
         .spacing(spacing.space_s)
         .into()
 }
