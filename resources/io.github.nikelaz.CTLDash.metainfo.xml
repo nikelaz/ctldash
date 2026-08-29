@@ -72,7 +72,19 @@
       <image>https://nikelaz.github.io/ctldash/screenshot-details.png</image>
     </screenshot>
   </screenshots>
-  <releases> 
+  <releases>
+    <release version="1.2.0" date="2026-08-29">
+      <description>
+        <p>Updates:</p>
+        <ul>
+          <li>Search moved to the top bar</li>
+          <li>Sortable table columns in the services list</li>
+          <li>Better log window with selectable text and a copy all button</li>
+          <li>Circle/color indicators next to the service state</li>
+          <li>Added translations for Czech, Danish, German, Spanish, French, Italian, Japanese, Norwegian Bokmål, Russian, Swedish and Chinese</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.1.2" date="2025-12-22">
       <description>
         <p>Fixes:</p>
