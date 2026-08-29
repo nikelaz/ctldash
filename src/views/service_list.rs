@@ -93,6 +93,7 @@ pub fn view_services_list<'a>(
         .push(header_cell(description_text, 3, SortColumn::Description, app.sort_column, app.sort_direction))
         .push(header_cell(active_state_text, 1, SortColumn::ActiveState, app.sort_column, app.sort_direction))
         .push(header_cell(sub_state_text, 1, SortColumn::SubState, app.sort_column, app.sort_direction))
+        .spacing(spacing.space_s)
         .padding(cosmic::iced::Padding::from([0, spacing.space_m]));
 
     let mut list = widget::list_column();
@@ -108,6 +109,7 @@ pub fn view_services_list<'a>(
     } else {
         for service in filtered_services {
             let row_content = widget::row::with_capacity(4)
+                .spacing(spacing.space_s)
                 .push(
                     widget::text(&service.name)
                         .width(Length::FillPortion(3))
