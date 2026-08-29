@@ -30,3 +30,4 @@ start = Spustit
 stop = Zastavit
 restart = Restartovat
 logs = Záznamy
+copied = Zkopírováno
