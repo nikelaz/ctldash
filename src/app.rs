@@ -3,7 +3,7 @@
 use crate::fl;
 use crate::message::Message;
 use crate::systemd::{ServiceScope, SystemdService};
-use crate::types::{ContextPage, MenuAction, Page};
+use crate::types::{ContextPage, MenuAction, Page, SortColumn, SortDirection};
 use crate::views;
 use cosmic::app::context_drawer;
 use cosmic::iced::{Length, Subscription};
@@ -28,6 +28,8 @@ pub struct AppModel {
     pub service_logs: String,
     pub is_loading: bool,
     pub search_filter: String,
+    pub sort_column: SortColumn,
+    pub sort_direction: SortDirection,
     pub(crate) search_expanded: bool,
     pub(crate) search_id: cosmic::widget::Id,
 }
@@ -91,6 +93,8 @@ impl cosmic::Application for AppModel {
             service_logs: "".to_string(),
             is_loading: false,
             search_filter: String::new(),
+            sort_column: SortColumn::Name,
+            sort_direction: SortDirection::Ascending,
             search_expanded: false,
             search_id: cosmic::widget::Id::unique(),
         };
@@ -119,9 +123,6 @@ impl cosmic::Application for AppModel {
 
     /// Elements to pack at the end of the header bar, next to the window controls.
     fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
-        // Search lives in the header bar, like native COSMIC apps.
-        // It's collapsed behind a search icon and expands into an input.
-        // It only applies to the services list pages.
         match &self.current_page {
             Page::SystemServices | Page::UserServices => {
                 if self.search_expanded {

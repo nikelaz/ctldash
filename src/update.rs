@@ -4,7 +4,7 @@ use crate::app::AppModel;
 use crate::fl;
 use crate::message::Message;
 use crate::systemd::{ServiceScope, SystemdManager};
-use crate::types::Page;
+use crate::types::{Page, SortDirection};
 use cosmic::prelude::*;
 
 impl AppModel {
@@ -320,6 +320,15 @@ impl AppModel {
                 } else {
                     self.context_page = context_page;
                     self.core.window.show_context = true;
+                }
+            }
+
+            Message::SortServices(column) => {
+                if self.sort_column == column {
+                    self.sort_direction = self.sort_direction.toggled();
+                } else {
+                    self.sort_column = column;
+                    self.sort_direction = SortDirection::Ascending;
                 }
             }
 

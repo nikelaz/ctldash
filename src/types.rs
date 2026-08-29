@@ -24,6 +24,32 @@ pub enum MenuAction {
     About,
 }
 
+/// The column of the services table to sort by.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SortColumn {
+    Name,
+    Description,
+    ActiveState,
+    SubState,
+}
+
+/// The direction in which a column is sorted.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum SortDirection {
+    #[default]
+    Ascending,
+    Descending,
+}
+
+impl SortDirection {
+    pub fn toggled(self) -> Self {
+        match self {
+            SortDirection::Ascending => SortDirection::Descending,
+            SortDirection::Descending => SortDirection::Ascending,
+        }
+    }
+}
+
 impl menu::action::MenuAction for MenuAction {
     type Message = Message;
 

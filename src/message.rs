@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use crate::systemd::{ServiceScope, SystemdService};
-use crate::types::ContextPage;
+use crate::types::{ContextPage, SortColumn};
 
 /// Messages emitted by the application and its widgets.
 #[derive(Debug, Clone)]
@@ -24,4 +24,5 @@ pub enum Message {
     Tick,
     SearchFilterChanged(String),
     ToggleSearch(bool),
+    SortServices(SortColumn),
 }

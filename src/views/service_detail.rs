@@ -104,13 +104,12 @@ pub fn view_service_detail<'a>(
         .push(widget::text(&service.unit_path))
         .spacing(spacing.space_s);
 
-    let info_section = widget::column::with_capacity(5)
-        .push(description)
-        .push(enabled)
-        .push(status)
-        .push(load_state)
-        .push(unit_path)
-        .spacing(spacing.space_s);
+    let info_section = widget::list_column()
+        .add(description)
+        .add(enabled)
+        .add(status)
+        .add(load_state)
+        .add(unit_path);
 
     let service_name = service.name.clone();
     let service_name2 = service.name.clone();
@@ -131,10 +130,11 @@ pub fn view_service_detail<'a>(
             .spacing(spacing.space_s);
     }
 
-    let logs = widget::container(
-        widget::text(&app.service_logs)
-            .size(12)
-    );
+    let logs = widget::container(widget::text(&app.service_logs).size(12))
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .padding(spacing.space_s)
+        .class(cosmic::theme::Container::Card);
 
     let scrollable_logs = widget::scrollable(logs)
         .width(Length::Fill)
@@ -146,6 +146,6 @@ pub fn view_service_detail<'a>(
         .push(controls)
         .push(widget::text::title4(logs_text))
         .push(scrollable_logs)
-        .spacing(spacing.space_m)
+        .spacing(spacing.space_s)
         .into()
 }
