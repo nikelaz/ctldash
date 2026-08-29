@@ -1,5 +1,5 @@
 app-title = CTL Dash
-about = Относно
+about = Относно CTL Dash…
 repository = Хранилище
 support = Поддръжка
 view = Изглед

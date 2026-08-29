@@ -327,6 +327,17 @@ impl AppModel {
                 self.search_filter = filter;
             }
 
+            Message::ToggleSearch(expand) => {
+                self.search_expanded = expand;
+
+                if expand {
+                    // Focus the input as soon as it is expanded.
+                    return cosmic::widget::text_input::focus(self.search_id.clone());
+                }
+
+                self.search_filter.clear();
+            }
+
             Message::LaunchUrl(url) => match open::that_detached(&url) {
                 Ok(()) => {}
                 Err(err) => {

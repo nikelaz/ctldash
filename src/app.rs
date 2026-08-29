@@ -28,6 +28,8 @@ pub struct AppModel {
     pub service_logs: String,
     pub is_loading: bool,
     pub search_filter: String,
+    pub(crate) search_expanded: bool,
+    pub(crate) search_id: cosmic::widget::Id,
 }
 
 impl cosmic::Application for AppModel {
@@ -89,6 +91,8 @@ impl cosmic::Application for AppModel {
             service_logs: "".to_string(),
             is_loading: false,
             search_filter: String::new(),
+            search_expanded: false,
+            search_id: cosmic::widget::Id::unique(),
         };
 
         // Create a startup command that sets the window title and loads services.
@@ -111,6 +115,40 @@ impl cosmic::Application for AppModel {
         )]);
 
         vec![menu_bar.into()]
+    }
+
+    /// Elements to pack at the end of the header bar, next to the window controls.
+    fn header_end(&self) -> Vec<Element<'_, Self::Message>> {
+        // Search lives in the header bar, like native COSMIC apps.
+        // It's collapsed behind a search icon and expands into an input.
+        // It only applies to the services list pages.
+        match &self.current_page {
+            Page::SystemServices | Page::UserServices => {
+                if self.search_expanded {
+                    let search_input =
+                        widget::search_input(fl!("search-placeholder"), &self.search_filter)
+                            .id(self.search_id.clone())
+                            .on_input(Message::SearchFilterChanged)
+                            .select_on_focus(true)
+                            .width(Length::Fixed(240.0));
+
+                    let close_button = widget::button::icon(widget::icon::from_name(
+                        "window-close-symbolic",
+                    ))
+                    .on_press(Message::ToggleSearch(false));
+
+                    vec![search_input.into(), close_button.into()]
+                } else {
+                    let search_button = widget::button::icon(widget::icon::from_name(
+                        "system-search-symbolic",
+                    ))
+                    .on_press(Message::ToggleSearch(true));
+
+                    vec![search_button.into()]
+                }
+            },
+            Page::Details => Vec::new(),
+        }
     }
 
     /// Enables the COSMIC application to create a nav bar with this model.
@@ -176,6 +214,7 @@ impl cosmic::Application for AppModel {
         self.nav.activate(id);
         self.selected_service = None;
         self.search_filter.clear();
+        self.search_expanded = false;
 
         let mut scope = ServiceScope::System;
 

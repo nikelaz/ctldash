@@ -23,4 +23,5 @@ pub enum Message {
     CurrentServiceRefreshed(Option<SystemdService>, String),
     Tick,
     SearchFilterChanged(String),
+    ToggleSearch(bool),
 }

@@ -1,5 +1,5 @@
 app-title = CTL Dash
-about = About
+about = About CTL Dash…
 repository = Repository
 support = Support
 view = View
@@ -12,7 +12,7 @@ user-services = User Services
 search-placeholder = Search services...
 service = Service
 description = Description
-active-state = Active State
+active-state = State
 sub-state = Sub State
 loading-services = Loading services...
 no-services-found = No services found

@@ -16,17 +16,8 @@ pub fn view_services_list<'a>(
 ) -> Element<'a, Message> {
     let spacing = cosmic::theme::spacing();
     
-    // Localized strings
-    let search_placeholder = fl!("search-placeholder");
-
-    let search_input = widget::text_input(search_placeholder, &app.search_filter)
-        .on_input(Message::SearchFilterChanged)
-        .width(Length::Fill);
-
-    let header = widget::row::with_capacity(2)
+    let header = widget::row::with_capacity(1)
         .push(widget::text::title3(title))
-        .push(search_input)
-        .spacing(spacing.space_l)
         .align_y(Alignment::Center);
 
 
