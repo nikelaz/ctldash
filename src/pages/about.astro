@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>About</title>
+
+    <meta
+      name="description"
+      content="Learn what CTL Dash is, what systemd services do, and how to use CTL Dash easily—even if you're not technical."
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/ctldash/icon.svg" />
+
+    <style>
+      :root {
+        --cosmic-purple: #9ca6e1;
+        --cosmic-purple-dark: #1c2760;
+        --cosmic-purple-light: #ccd2fb;
+        --cosmic-lavender: #d7d7ff;
+        --text-dark: #01061e;
+        --text-light: #f5f5f5;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        line-height: 1.7;
+        color: var(--text-dark);
+        background: linear-gradient(
+          135deg,
+          var(--cosmic-purple-light) 0%,
+          var(--cosmic-purple) 100%
+        );
+      }
+
+     header {
+  position: fixed;
+  top: 0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 1240px;
+  height: 72px; 
+  padding: 0 2rem; 
+  background: var(--text-dark);
+  color: var(--text-light);
+  border-radius: 999px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+}
+
+.header-inner {
+  width: 100%;
+  display: flex;
+  align-items: center; 
+  justify-content: space-between;
+}
+
+      header a {
+        color: var(--text-light);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 10rem 2rem 4rem;
+      }
+      .header-inner {
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.brand img {
+  width: 40px;  
+  height: 40px;
+  border-radius: 10px;
+}
+
+.back-home {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: background 0.2s ease;
+}
+
+.back-home:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+
+      h1 {
+        font-size: 3.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+      }
+
+      h2 {
+        font-size: 2.2rem;
+        margin-top: 4rem;
+        margin-bottom: 1.5rem;
+      }
+
+      h3 {
+        margin-top: 2rem;
+        font-size: 1.3rem;
+      }
+
+      p {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 14px;
+        padding: 2.5rem;
+        margin-top: 2rem;
+      }
+
+      ul {
+        padding-left: 1.2rem;
+      }
+
+      li {
+        margin-bottom: 0.6rem;
+      }
+
+      footer {
+        text-align: center;
+        padding: 3rem 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+   
+   <header>
+  <div class="header-inner">
+    
+    <a href="/ctldash/" class="brand">
+      <img src="/ctldash/icon.svg" alt="CTL Dash Logo" />
+      <span>CTL Dash</span>
+    </a>
+
+    
+    <a href="/ctldash/" class="back-home">← Back to Home</a>
+  </div>
+</header>
+
+
+    <main class="container">
+      <h1><u>About CTL Dash</u></h1>
+
+      <div class="card">
+        <p>
+          <strong>CTL Dash</strong> is a modern graphical application that helps you
+          manage background services on Linux systems that use
+          <strong><u>systemd</u></strong>, specifically designed for the
+          <strong><u>COSMIC desktop environment</u></strong>.
+        </p>
+
+        <p>
+          Instead of typing complex terminal commands, CTL Dash lets you
+          <strong>view, start, stop, enable, disable, and inspect services</strong>
+          using a clean and intuitive interface.
+        </p>
+      </div>
+
+      <h2>What are systemd services?</h2>
+
+      <div class="card">
+        <p>
+          A <strong><u>systemd service</u></strong> is a background program that runs on your
+          computer to make things work smoothly.
+        </p>
+
+        <p>Some real-life examples:</p>
+
+        <ul>
+          <li>Wi-Fi and Bluetooth services</li>
+          <li>Audio and sound services</li>
+          <li>Display and login managers</li>
+          <li>Background apps that start automatically when you log in</li>
+        </ul>
+
+        <p>
+          These services usually run silently in the background. CTL Dash gives you
+          visibility and control over them—without needing technical knowledge.
+        </p>
+      </div>
+
+      <h2>User Guide: How to use CTL Dash</h2>
+
+      <div class="card">
+        <h3><u>Viewing services</u></h3>
+        <p>
+          When you open CTL Dash, you’ll see a list of all available services along
+          with their current status (running, stopped, failed).
+        </p>
+
+        <h3><u>System vs User services</u></h3>
+        <ul>
+          <li><strong>System services</strong> affect the whole system</li>
+          <li><strong>User services</strong> only affect your user account</li>
+        </ul>
+
+        <h3><u>Controlling a service</u></h3>
+        <ul>
+          <li>Start or stop it</li>
+          <li>Restart it</li>
+          <li>Enable or disable it on startup</li>
+        </ul>
+
+        <h3><u>Viewing logs</u></h3>
+        <p>
+          CTL Dash allows you to view service logs directly, helping you understand
+          what a service is doing or why it failed.
+        </p>
+
+        <h3><u>Safe and transparent</u></h3>
+        <p>
+          CTL Dash does not hide what’s happening—it simply presents systemd
+          information in a clearer, safer way.
+        </p>
+      </div>
+    </main>
+
+    <footer>
+      <p><u>CTL Dash — Built with ❤️ for the COSMIC desktop environment.</u></p>
+    </footer>
+  </body>
+</html>
