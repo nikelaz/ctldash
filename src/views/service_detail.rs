@@ -95,9 +95,11 @@ pub fn view_service_detail<'a>(
         .align_y(Alignment::Center)
         .spacing(spacing.space_s);
 
-    let status = widget::row::with_capacity(2)
+    let status = widget::row::with_capacity(3)
         .push(widget::text(status_label).width(Length::Fixed(120.0)))
+        .push(crate::views::service_list::state_dot(&service.sub_state))
         .push(widget::text(&service.sub_state))
+        .align_y(Alignment::Center)
         .spacing(spacing.space_s);
 
     let unit_path = widget::row::with_capacity(2)

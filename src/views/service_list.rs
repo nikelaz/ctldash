@@ -19,6 +19,57 @@ fn compare_services(a: &SystemdService, b: &SystemdService, column: SortColumn) 
     }
 }
 
+/// Pastel color used to color-code a systemd state.
+pub fn state_color(state: &str) -> cosmic::iced::Color {
+    match state {
+        // Green: healthy states
+        "active" | "running" => cosmic::iced::Color::from_rgb8(143, 201, 143),
+        // Yellow: transient states
+        "activating" | "reloading" | "reload" | "start" | "mounting"
+        | "mounting-sigterm" | "mounting-sigkill" => {
+            cosmic::iced::Color::from_rgb8(242, 220, 126)
+        }
+        // Orange: shutting down states
+        "deactivating" | "stop" | "stop-sigterm" | "stop-sigkill" => {
+            cosmic::iced::Color::from_rgb8(240, 178, 122)
+        }
+        // Red: error state
+        "failed" => cosmic::iced::Color::from_rgb8(232, 144, 144),
+        // Blue: states that finished cleanly without staying active
+        "exited" => cosmic::iced::Color::from_rgb8(143, 184, 222),
+        // Gray: inactive/dead/unknown
+        _ => cosmic::iced::Color::from_rgb8(184, 184, 184),
+    }
+}
+
+pub fn state_dot<'a>(state: &str) -> Element<'a, Message> {
+    let color = state_color(state);
+    widget::container(widget::space::horizontal())
+        .width(Length::Fixed(8.0))
+        .height(Length::Fixed(8.0))
+        .class(cosmic::theme::Container::Custom(Box::new(move |_| {
+            cosmic::widget::container::Style {
+                background: Some(color.into()),
+                border: cosmic::iced::Border {
+                    radius: 4.0.into(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        })))
+        .into()
+}
+
+fn state_cell<'a>(state: &'a str) -> Element<'a, Message> {
+    widget::row::with_capacity(2)
+        .push(state_dot(state))
+        .push(widget::text(state.to_string()).width(Length::Fill))
+        .spacing(6)
+        .align_y(Alignment::Center)
+        .width(Length::FillPortion(1))
+        .into()
+}
+
 fn header_cell<'a>(
     text: String,
     portion: u16,
@@ -120,14 +171,8 @@ pub fn view_services_list<'a>(
                         .width(Length::FillPortion(3))
                         .wrapping(cosmic::iced::widget::text::Wrapping::Word)
                 )
-                .push(
-                    widget::text(&service.active_state)
-                        .width(Length::FillPortion(1))
-                )
-                .push(
-                    widget::text(&service.sub_state)
-                        .width(Length::FillPortion(1))
-                );
+                .push(state_cell(&service.active_state))
+                .push(state_cell(&service.sub_state));
 
             let service_clone = service.clone();
 
