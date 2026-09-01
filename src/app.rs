@@ -139,16 +139,12 @@ impl cosmic::Application for AppModel {
                     let search_input =
                         widget::search_input(fl!("search-placeholder"), &self.search_filter)
                             .id(self.search_id.clone())
+                            .on_clear(Message::ToggleSearch(false))
                             .on_input(Message::SearchFilterChanged)
                             .select_on_focus(true)
                             .width(Length::Fixed(240.0));
 
-                    let close_button = widget::button::icon(widget::icon::from_name(
-                        "window-close-symbolic",
-                    ))
-                    .on_press(Message::ToggleSearch(false));
-
-                    vec![search_input.into(), close_button.into()]
+                    vec![search_input.into()]
                 } else {
                     let search_button = widget::button::icon(widget::icon::from_name(
                         "system-search-symbolic",
@@ -245,4 +241,3 @@ impl cosmic::Application for AppModel {
         Task::batch(vec![title_command, load_command])
     }
 }
-
