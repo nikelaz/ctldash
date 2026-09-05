@@ -7,8 +7,10 @@ use crate::types::{ContextPage, MenuAction, Page, SortColumn, SortDirection};
 use crate::views;
 use cosmic::app::context_drawer;
 use cosmic::iced::{Length, Subscription};
+use cosmic::widget::menu::{ItemHeight, ItemWidth};
+use cosmic::widget::{RcElementWrapper, button};
 use cosmic::widget::{self, about::About, icon, menu, nav_bar};
-use cosmic::prelude::*;
+use cosmic::{prelude::*, theme};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -121,12 +123,20 @@ impl cosmic::Application for AppModel {
     /// Elements to pack at the start of the header bar.
     fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
         let menu_bar = menu::bar(vec![menu::Tree::with_children(
-            menu::root(fl!("view")).apply(Element::from),
+            RcElementWrapper::new(
+                button::icon(icon::from_name("open-menu-symbolic"))
+                    .padding([4, 12])
+                    .class(theme::Button::MenuRoot)
+                    .into(),
+            ),
             menu::items(
                 &self.key_binds,
                 vec![menu::Item::Button(fl!("about"), None, MenuAction::About)],
             ),
-        )]);
+        )])
+        .item_height(ItemHeight::Dynamic(40))
+        .item_width(ItemWidth::Uniform(240))
+        .spacing(4.0);
 
         vec![menu_bar.into()]
     }
@@ -245,4 +255,3 @@ impl cosmic::Application for AppModel {
         Task::batch(vec![title_command, load_command])
     }
 }
-
