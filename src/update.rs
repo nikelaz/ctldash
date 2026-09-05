@@ -178,12 +178,24 @@ impl AppModel {
                 }
             }
 
+            Message::ListScrolled(offset) => {
+                self.list_scroll_offset = offset;
+            }
+
             Message::BackToList => {
                 self.selected_service = None;
                 match self.current_scope {
                     ServiceScope::System => self.current_page = Page::SystemServices,
                     ServiceScope::User => self.current_page = Page::UserServices,
                 }
+
+                // The list widget was destroyed while the details page was
+                // shown, so its scroll state was lost. Restore the last known
+                // offset now that the list is back in the widget tree.
+                return cosmic::iced::widget::scrollable::scroll_to(
+                    self.list_scroll_id.clone(),
+                    self.list_scroll_offset.into(),
+                );
             }
 
             Message::StartService(name) => {

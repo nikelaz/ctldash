@@ -185,6 +185,8 @@ pub fn view_services_list<'a>(
     }
 
     let scrollable = widget::scrollable(list)
+        .id(app.list_scroll_id.clone())
+        .on_scroll(|viewport| Message::ListScrolled(viewport.absolute_offset()))
         .height(Length::Fill);
 
     let services_table = widget::column::with_capacity(2)
