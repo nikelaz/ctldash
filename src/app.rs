@@ -42,6 +42,11 @@ pub struct AppModel {
     pub logs_copied_at: Option<Instant>,
     pub(crate) search_expanded: bool,
     pub(crate) search_id: cosmic::widget::Id,
+    /// Widget id of the services list scrollable, used to restore scroll
+    /// position when returning from the details page.
+    pub(crate) list_scroll_id: cosmic::widget::Id,
+    /// Last scroll offset of the services list, persisted across page changes.
+    pub list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset,
 }
 
 impl cosmic::Application for AppModel {
@@ -109,6 +114,8 @@ impl cosmic::Application for AppModel {
             logs_copied_at: None,
             search_expanded: false,
             search_id: cosmic::widget::Id::unique(),
+            list_scroll_id: cosmic::widget::Id::unique(),
+            list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset::default(),
         };
 
         // Create a startup command that sets the window title and loads services.
