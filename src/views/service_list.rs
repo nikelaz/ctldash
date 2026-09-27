@@ -3,7 +3,7 @@
 use crate::app::AppModel;
 use crate::fl;
 use crate::message::Message;
-use crate::systemd::SystemdService;
+use crate::systemd::{ServiceScope, SystemdService};
 use crate::types::{SortColumn, SortDirection};
 use cosmic::iced::{Alignment, Length};
 use cosmic::widget;
@@ -98,6 +98,7 @@ fn header_cell<'a>(
 pub fn view_services_list<'a>(
     app: &'a AppModel,
     services: &'a [SystemdService],
+    scope: ServiceScope,
     title: String,
 ) -> Element<'a, Message> {
     let spacing = cosmic::theme::spacing();
@@ -186,7 +187,7 @@ pub fn view_services_list<'a>(
 
     let scrollable = widget::scrollable(list)
         .id(app.list_scroll_id.clone())
-        .on_scroll(|viewport| Message::ListScrolled(viewport.absolute_offset()))
+        .on_scroll(move |viewport| Message::ListScrolled(scope, viewport.absolute_offset()))
         .height(Length::Fill);
 
     let services_table = widget::column::with_capacity(2)

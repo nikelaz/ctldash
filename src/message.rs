@@ -27,5 +27,5 @@ pub enum Message {
     SortServices(SortColumn),
     CopyLogs,
     LogsEditorAction(cosmic::widget::text_editor::Action),
-    ListScrolled(cosmic::iced::widget::scrollable::AbsoluteOffset),
+    ListScrolled(ServiceScope, cosmic::iced::widget::scrollable::AbsoluteOffset),
 }

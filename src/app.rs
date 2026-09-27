@@ -42,11 +42,12 @@ pub struct AppModel {
     pub logs_copied_at: Option<Instant>,
     pub(crate) search_expanded: bool,
     pub(crate) search_id: cosmic::widget::Id,
-    /// Widget id of the services list scrollable, used to restore scroll
-    /// position when returning from the details page.
+    /// Shared id of the active list, used to apply the selected scope's offset
+    /// before the list content changes.
     pub(crate) list_scroll_id: cosmic::widget::Id,
-    /// Last scroll offset of the services list, persisted across page changes.
-    pub list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset,
+    /// Last scroll offset for each services list.
+    pub system_list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset,
+    pub user_list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset,
 }
 
 impl cosmic::Application for AppModel {
@@ -115,7 +116,8 @@ impl cosmic::Application for AppModel {
             search_expanded: false,
             search_id: cosmic::widget::Id::unique(),
             list_scroll_id: cosmic::widget::Id::unique(),
-            list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset::default(),
+            system_list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset::default(),
+            user_list_scroll_offset: cosmic::iced::widget::scrollable::AbsoluteOffset::default(),
         };
 
         // Create a startup command that sets the window title and loads services.
@@ -206,10 +208,20 @@ impl cosmic::Application for AppModel {
 
         match &self.current_page {
             Page::SystemServices => {
-                content = views::view_services_list(self, &self.system_services, fl!("system-services"));
+                content = views::view_services_list(
+                    self,
+                    &self.system_services,
+                    ServiceScope::System,
+                    fl!("system-services"),
+                );
             },
             Page::UserServices => {
-                content = views::view_services_list(self, &self.user_services, fl!("user-services"));
+                content = views::view_services_list(
+                    self,
+                    &self.user_services,
+                    ServiceScope::User,
+                    fl!("user-services"),
+                );
             },
             Page::Details => {
                 content = views::view_service_detail(self, self.selected_service.as_ref());
@@ -250,11 +262,22 @@ impl cosmic::Application for AppModel {
             scope = ServiceScope::User;
         }
 
+        self.current_scope = scope;
+
+        let scroll_offset = match scope {
+            ServiceScope::System => self.system_list_scroll_offset,
+            ServiceScope::User => self.user_list_scroll_offset,
+        };
+        let restore_scroll = cosmic::iced::widget::scrollable::scroll_to(
+            self.list_scroll_id.clone(),
+            scroll_offset.into(),
+        );
+
         let title_command = self.update_title();
         let load_command = Task::perform(async {}, move |_| {
             cosmic::Action::from(Message::LoadServices(Some(scope)))
         });
 
-        Task::batch(vec![title_command, load_command])
+        Task::batch(vec![title_command, load_command, restore_scroll])
     }
 }
